@@ -3,7 +3,7 @@ import { DEFAULT_STAGES, type Locale, type Pipeline, type SaveStagesInput } from
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
 import { deals, pipelineStages, pipelines, tenants } from '../db/schema.js'
-import type { TenantContext } from '../db/tenant.js'
+import { asSystem, type TenantContext } from '../db/tenant.js'
 import { HttpError } from '../errors.js'
 
 async function insertPipeline(tx: Tx, ctx: TenantContext, name: string, position: number, locale: Locale) {
@@ -28,7 +28,8 @@ export async function ensureDefaultPipeline(tx: Tx, ctx: TenantContext, locale: 
   // Serialise concurrent first requests in the same workspace.
   await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`pipelines:${ctx.tenantId}`}))`)
   const [again] = await tx.select().from(pipelines).orderBy(asc(pipelines.position)).limit(1)
-  return again ?? insertPipeline(tx, ctx, locale === 'en' ? 'Sales' : 'Försäljning', 0, locale)
+  // Any role may open Deals first; creating the default pipeline is the app's own setup work.
+  return again ?? asSystem(tx, ctx, () => insertPipeline(tx, ctx, locale === 'en' ? 'Sales' : 'Försäljning', 0, locale))
 }
 
 export async function listPipelines(tx: Tx, ctx: TenantContext, locale: Locale): Promise<{ pipelines: Pipeline[]; staleDays: number }> {

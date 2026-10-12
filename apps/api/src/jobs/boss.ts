@@ -26,12 +26,13 @@ export async function enqueue<T extends Record<string, unknown>>(
   return boss.send(queue, data, options)
 }
 
-// Workers resolve the role from the job (system jobs act as the user who caused them).
+// Jobs act for the user who caused them (audit actor) with the 'system' role, unless a job
+// must be limited to what that user may do (imports pass the user's role).
 export async function workTenant<T extends Record<string, unknown>>(
   boss: PgBoss,
   queue: QueueName,
   handler: (tx: Tx, data: TenantJob<T>) => Promise<void>,
-  options: { role?: Role; pollingIntervalSeconds?: number } = {},
+  options: { role?: Role | 'system'; pollingIntervalSeconds?: number } = {},
 ) {
   return boss.work<TenantJob<T>>(
     queue,
@@ -39,7 +40,7 @@ export async function workTenant<T extends Record<string, unknown>>(
     async (jobs) => {
       for (const job of jobs) {
         await withTenant(
-          { tenantId: job.data.tenantId, userId: job.data.userId, role: options.role ?? 'member' },
+          { tenantId: job.data.tenantId, userId: job.data.userId, role: options.role ?? 'system' },
           (tx) => handler(tx, job.data),
         )
       }

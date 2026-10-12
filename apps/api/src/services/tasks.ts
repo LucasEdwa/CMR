@@ -214,7 +214,7 @@ async function scheduleReminder(tx: Tx, ctx: TenantContext, task: TaskRow) {
 
 // Runs in the worker as the assignee. Sends at most one reminder per task and due date.
 export async function sendTaskReminder(tx: Tx, job: ReminderJob) {
-  const ctx: TenantContext = { tenantId: job.tenantId, userId: job.userId, role: 'member' }
+  const ctx: TenantContext = { tenantId: job.tenantId, userId: job.userId, role: 'system' }
   const [row] = await baseQuery(tx).where(
     and(
       eq(tasks.id, job.taskId),

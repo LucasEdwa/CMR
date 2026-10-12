@@ -222,7 +222,8 @@ export async function invitationRoutes(app: FastifyInstance) {
       sessionId = created?.id
     }
 
-    const ctx: TenantContext = { tenantId, userId, role: invitation.role }
+    // The token was checked above, so the membership is created with the 'system' role.
+    const ctx: TenantContext = { tenantId, userId, role: 'system' }
     await withTenant(ctx, async (tx) => {
       // Atomic single use: a second accept (or a race) finds nothing to update.
       const [accepted] = await tx

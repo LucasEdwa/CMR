@@ -20,6 +20,7 @@ import {
   type createImportSchema,
 } from '@crm/shared'
 import { audit } from '../db/audit.js'
+import { isRlsViolation } from '../db/errors.js'
 import type { Tx } from '../db/client.js'
 import {
   activities,
@@ -45,7 +46,8 @@ import { getPicklists } from './picklists.js'
 import { tagsFor } from './tags.js'
 import { ensureDefaultPipeline } from './pipelines.js'
 
-export type ImportJob = TenantJob<{ importId: string }>
+// The importer's role travels with the job: an import may only do what its user may do.
+export type ImportJob = TenantJob<{ importId: string; role: TenantContext['role'] }>
 
 const CHUNK = 250
 export const MAX_IMPORT_ERRORS = 1000
@@ -129,9 +131,9 @@ export async function createImport(tx: Tx, ctx: TenantContext, input: z.output<t
 
 // Queued in the worker; without one (tests, scripts) it runs right away.
 export async function startImport(ctx: TenantContext, importId: string) {
-  const job: ImportJob = { tenantId: ctx.tenantId, userId: ctx.userId, importId }
+  const job: ImportJob = { tenantId: ctx.tenantId, userId: ctx.userId, importId, role: ctx.role }
   if (boss) await boss.send(QUEUES.importRun, job, { retryLimit: 0 })
-  else await runImport(job, ctx.role)
+  else await runImport(job)
 }
 
 // ---- run -----------------------------------------------------------------------------
@@ -319,6 +321,8 @@ function fileKey(object: ImportObject, mapped: MappedRow): string | null {
 
 function errorFromException(err: unknown): { field: string | null; code: string } {
   if (err instanceof RowError) return { field: err.field, code: err.code }
+  // Refused by RLS, e.g. another owner while the workspace shows members only their own records.
+  if (isRlsViolation(err)) return { field: 'owner', code: 'forbidden' }
   if (err instanceof HttpError) {
     if (err.code === 'duplicate_email') return { field: 'email', code: 'exists' }
     if (err.code === 'duplicate_org_number') return { field: 'orgNumber', code: 'exists' }
@@ -328,8 +332,8 @@ function errorFromException(err: unknown): { field: string | null; code: string 
   throw err
 }
 
-export async function runImport(job: ImportJob, role: TenantContext['role'] = 'member') {
-  const ctx: TenantContext = { tenantId: job.tenantId, userId: job.userId, role }
+export async function runImport(job: ImportJob) {
+  const ctx: TenantContext = { tenantId: job.tenantId, userId: job.userId, role: job.role ?? 'member' }
   const row = await withTenant(ctx, async (tx) => {
     const [r] = await tx
       .update(imports)

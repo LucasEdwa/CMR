@@ -12,7 +12,8 @@ import { auth, type AuthSession } from './auth.js'
 declare module 'fastify' {
   interface FastifyRequest {
     authSession: AuthSession | null
-    tenant: TenantContext | null
+    // Requests always carry a real membership role, never 'system'.
+    tenant: (TenantContext & { role: Role }) | null
   }
 }
 
@@ -64,7 +65,7 @@ export function requireUser(request: FastifyRequest): AuthSession {
   return request.authSession
 }
 
-export function requireTenant(request: FastifyRequest, roles?: readonly Role[]): TenantContext {
+export function requireTenant(request: FastifyRequest, roles?: readonly Role[]): TenantContext & { role: Role } {
   requireUser(request)
   const ctx = request.tenant
   if (!ctx) throw new HttpError(403, 'no_workspace', 'No active workspace')
@@ -72,6 +73,8 @@ export function requireTenant(request: FastifyRequest, roles?: readonly Role[]):
   return ctx
 }
 
+// Deleting the workspace (and billing, Sprint 8).
+export const OWNERS = ['owner'] as const
 export const MANAGERS = ['owner', 'admin'] as const
 // Everyone except viewers can create and change CRM records.
 export const WRITERS = ['owner', 'admin', 'member'] as const
