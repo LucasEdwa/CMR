@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "own_records_only" boolean DEFAULT false NOT NULL;

@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { parseMoney } from '@crm/shared'
 import { buildApp } from '../../app.js'
 import { deals } from '../../db/schema.js'
-import { withTenantOnly } from '../../db/tenant.js'
+import { asSystemIn } from '../../test/factories.js'
 import { TestClient, addMember, createWorkspace, signUpVerified } from '../../test/client.js'
 
 let app: FastifyInstance
@@ -177,7 +177,7 @@ describe('deals', () => {
     const { owner, ws } = await workspace()
     const fresh = await post(owner, '/api/deals', { name: 'Färsk' }, 201)
     const old = await post(owner, '/api/deals', { name: 'Gammal' }, 201)
-    await withTenantOnly(ws.id, (tx) =>
+    await asSystemIn(ws.id, (tx) =>
       tx.update(deals).set({ lastActivityAt: new Date(Date.now() - 20 * 86_400_000) }).where(eq(deals.id, old.id)),
     )
     expect((await owner.get(`/api/deals/${old.id}`)).json().stale).toBe(true)

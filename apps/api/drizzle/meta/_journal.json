@@ -113,6 +113,20 @@
       "when": 1791830160562,
       "tag": "0015_imports_recent_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791831960481,
+      "tag": "0016_own_records_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791831961299,
+      "tag": "0017_role_policies",
+      "breakpoints": true
     }
   ]
 }

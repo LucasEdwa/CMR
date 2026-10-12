@@ -42,6 +42,8 @@ export const tenants = pgTable('tenants', {
   dateFormat: text('date_format').notNull().default('yyyy-MM-dd'),
   // An open deal with no activity for this many days is shown as stale.
   staleDealDays: integer('stale_deal_days').notNull().default(DEFAULT_STALE_DAYS),
+  // Members and viewers only see contacts, companies and deals they own (enforced in RLS).
+  ownRecordsOnly: boolean('own_records_only').notNull().default(false),
   ...timestamps,
 })
 

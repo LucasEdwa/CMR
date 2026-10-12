@@ -4,7 +4,8 @@ import { eq, sql } from 'drizzle-orm'
 import { plainToRichDoc, type Activity, type MyTasks, type RichDoc, type Task } from '@crm/shared'
 import { buildApp } from '../../app.js'
 import { activities, contacts, deals, tasks } from '../../db/schema.js'
-import { withTenant, withTenantOnly } from '../../db/tenant.js'
+import { withTenant } from '../../db/tenant.js'
+import { asSystemIn } from '../../test/factories.js'
 import { outbox } from '../../email/send.js'
 import { purgeRecord } from '../../services/purge.js'
 import { sendTaskReminder } from '../../services/tasks.js'
@@ -80,7 +81,7 @@ describe('activities', () => {
 
   it('logging an activity on a stale deal makes it fresh again', async () => {
     const { owner, ws, deal } = await setup()
-    await withTenantOnly(ws.id, (tx) => tx.update(deals).set({ lastActivityAt: new Date('2026-01-01') }).where(eq(deals.id, deal.id)))
+    await asSystemIn(ws.id, (tx) => tx.update(deals).set({ lastActivityAt: new Date('2026-01-01') }).where(eq(deals.id, deal.id)))
     expect((await expectStatus(owner.get(`/api/deals/${deal.id}`), 200)).stale).toBe(true)
     await expectStatus(owner.post('/api/activities', { type: 'meeting', record: { type: 'deal', id: deal.id }, subject: 'Demo' }), 201)
     expect((await expectStatus(owner.get(`/api/deals/${deal.id}`), 200)).stale).toBe(false)

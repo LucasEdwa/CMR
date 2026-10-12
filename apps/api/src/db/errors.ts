@@ -7,6 +7,9 @@ function pgError(err: unknown): PgError | null {
   return ((cause && typeof cause === 'object' ? cause : err) as PgError) ?? null
 }
 
+// "new row violates row-level security policy" (or a revoked privilege).
+export const isRlsViolation = (err: unknown) => pgError(err)?.code === '42501'
+
 export function isUniqueViolation(err: unknown, constraint?: string): boolean {
   const e = pgError(err)
   if (e?.code !== '23505') return false
