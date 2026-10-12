@@ -73,6 +73,8 @@ export function requireTenant(request: FastifyRequest, roles?: readonly Role[]):
 }
 
 export const MANAGERS = ['owner', 'admin'] as const
+// Everyone except viewers can create and change CRM records.
+export const WRITERS = ['owner', 'admin', 'member'] as const
 
 // preHandler helpers for route options.
 export const authenticated = async (request: FastifyRequest) => {

@@ -5,6 +5,8 @@ export const QUEUES = {
   ping: 'system.ping',
   // Transactional email. Not tenant-scoped: signup and password reset happen outside a workspace.
   email: 'email.send',
+  // Erases one soft-deleted record once it has been in Trash for 30 days.
+  purgeRecord: 'records.purge',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]
