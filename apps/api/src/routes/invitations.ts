@@ -1,8 +1,9 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { createHash, randomBytes } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 import { fromNodeHeaders } from 'better-auth/node'
 import { withClientIp } from './auth.js'
+import { limit } from '../http/limits.js'
 import {
   acceptInvitationSchema,
   inviteSchema,
@@ -79,13 +80,7 @@ export async function invitationRoutes(app: FastifyInstance) {
     '/workspace/invitations',
     {
       preHandler: inWorkspace(MANAGERS),
-      config: {
-        rateLimit: {
-          max: 30,
-          timeWindow: '1 hour',
-          keyGenerator: (request: FastifyRequest) => `invite:${request.tenant?.tenantId ?? request.ip}`,
-        },
-      },
+      config: limit('invite', 30, '1 hour', 'workspace'),
     },
     async (request, reply) => {
       const ctx = requireTenant(request, MANAGERS)

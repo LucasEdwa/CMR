@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/node'
 import { env, trustProxySetting } from './env.js'
 import { HttpError, registerErrorHandlers } from './errors.js'
 import { authContext } from './auth/context.js'
+import { DEFAULT_LIMIT, rateLimitError } from './http/limits.js'
 import { authRoutes } from './routes/auth.js'
 import { healthRoutes } from './routes/health.js'
 import { debugRoutes } from './routes/debug.js'
@@ -57,7 +58,14 @@ export async function buildApp() {
 
   await app.register(helmet)
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true })
-  await app.register(rateLimit, { global: false })
+  // After authentication (preHandler), so limits can be per user and per workspace.
+  await app.register(rateLimit, {
+    global: true,
+    hook: 'preHandler',
+    ...DEFAULT_LIMIT,
+    errorResponseBuilder: rateLimitError,
+    allowList: (request) => !request.url.startsWith('/api/') || request.url.startsWith('/api/health'),
+  })
 
   // CSRF: the session is a cookie, so state-changing requests from a browser must come from our
   // own origin. Better Auth checks its own routes; this covers the rest of the API.
