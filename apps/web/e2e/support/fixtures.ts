@@ -46,3 +46,26 @@ export async function loginThroughForm(page: Page, email: string, password = SEE
   await page.getByLabel('Lösenord').fill(password)
   await page.getByRole('button', { name: 'Logga in' }).click()
 }
+
+// A brand-new owner with their own company, so tests can change data freely.
+export async function freshCompany(page: Page, name: string) {
+  const email = uniqueEmail('owner')
+  await page.request.post('/api/auth/sign-up/email', {
+    data: { name: 'Olle Owner', email, password: 'Secret123!' },
+    headers: { origin: BASE_ORIGIN },
+  })
+  const { linkFromEmail } = await import('./mailpit.ts')
+  await page.goto(await linkFromEmail(email, '/verify-email'))
+  await page.getByLabel('Företagsnamn').fill(name)
+  await page.getByLabel('Adress').fill(`co-${Date.now()}-${randomInt(1000)}`)
+  await page.getByRole('button', { name: 'Skapa', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Hej Olle!' })).toBeVisible()
+  return email
+}
+
+// Creates records through the API (fast setup); returns the created JSON.
+export async function apiPost<T = { id: string }>(page: Page, path: string, data: object): Promise<T> {
+  const res = await page.request.post(`/api${path}`, { data, headers: { origin: BASE_ORIGIN } })
+  expect(res.status(), await res.text()).toBe(201)
+  return (await res.json()) as T
+}

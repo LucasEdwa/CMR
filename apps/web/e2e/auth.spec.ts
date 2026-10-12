@@ -19,7 +19,7 @@ test('sign up, verify by email, create a company and land in an empty app', asyn
   await page.getByRole('button', { name: 'Skapa', exact: true }).click()
 
   await expect(page.getByRole('heading', { name: 'Hej Nora!' })).toBeVisible()
-  await expect(page.getByText('Här kommer era kunder att synas')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Kom igång' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Byt företag' })).toContainText('Nyström & Co AB')
 })
 
