@@ -216,7 +216,10 @@
     "sharedBy": "Shared by {{name}}",
     "myViews": "My views",
     "sharedViews": "Shared views",
-    "updateView": "Save changes to view"
+    "updateView": "Save changes to view",
+    "selectRow": "Select {{name}}",
+    "selectPage": "Select all on this page",
+    "moreActions": "More actions"
   },
   "contacts": {
     "title": "Contacts",
@@ -592,5 +595,219 @@
     "mention": "{{actor}} mentioned you on {{record}}",
     "assigned": "{{actor}} assigned you a task",
     "reminder": "Reminder: due today"
+  },
+  "import": {
+    "button": "Import from CSV",
+    "title": "Import",
+    "intro": "Bring in contacts, companies or deals from a CSV file, such as an export from Excel or another CRM.",
+    "step1": "1. Choose a file",
+    "step2_one": "2. Map columns ({{count}} row in {{name}})",
+    "step2_other": "2. Map columns ({{count}} rows in {{name}})",
+    "step3": "3. Preview and import",
+    "what": "What do you want to import?",
+    "objects": {
+      "contacts": "Contacts",
+      "companies": "Companies",
+      "deals": "Deals"
+    },
+    "file": "CSV file",
+    "fileHint": "The first row must be column headers. Semicolons and commas both work, and files saved in Excel keep å, ä and ö.",
+    "sample": "Download a sample file (500 contacts)",
+    "tooBig": "The file is too large (at most {{mb}} MB).",
+    "tooManyRows": "The file has too many rows (at most {{max}}).",
+    "emptyFile": "The file has no rows.",
+    "column": "Column in file",
+    "example": "Example",
+    "field": "Import into",
+    "fieldFor": "Field for column {{column}}",
+    "unnamed": "Column {{n}}",
+    "skip": "Skip",
+    "missing": "Also map: {{fields}}",
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "mobilePhone": "Mobile",
+      "title": "Title",
+      "company": "Company",
+      "lifecycleStage": "Lifecycle stage",
+      "leadSource": "Lead source",
+      "street": "Street address",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country",
+      "tags": "Tags",
+      "owner": "Owner (email or name)",
+      "name": "Name",
+      "orgNumber": "Org number",
+      "vatNumber": "VAT number",
+      "domain": "Website",
+      "industry": "Industry",
+      "size": "Size",
+      "value": "Value",
+      "currency": "Currency",
+      "pipeline": "Pipeline",
+      "stage": "Stage",
+      "status": "Status",
+      "expectedCloseDate": "Expected close",
+      "contactEmail": "Contact email"
+    },
+    "previewLabel": "Preview of the first rows",
+    "check": "Check",
+    "rowOk": "Row looks good",
+    "existing": "If the record already exists",
+    "modes": {
+      "skip": "Skip the row",
+      "update": "Update the record with the values in the file"
+    },
+    "modeHints": {
+      "contacts": {
+        "skip": "The same email address counts as the same contact.",
+        "update": "Empty cells change nothing. Tags are added."
+      },
+      "companies": {
+        "skip": "The same org number (else website) counts as the same company.",
+        "update": "Empty cells change nothing."
+      },
+      "deals": {
+        "skip": "The same name at the same company counts as the same deal.",
+        "update": "Empty cells change nothing."
+      }
+    },
+    "start_one": "Import {{count}} row",
+    "start_other": "Import {{count}} rows",
+    "running": "Importing {{name}}…",
+    "progress": "Import in progress",
+    "processed": "{{done}} of {{total}} rows done",
+    "statuses": {
+      "done": "Import finished: {{name}}",
+      "failed": "Import stopped: {{name}}",
+      "undone": "Import undone: {{name}}"
+    },
+    "summary": "Result",
+    "counts": {
+      "created": "New",
+      "updated": "Updated",
+      "skipped": "Skipped",
+      "failed": "Errors"
+    },
+    "errorsTitle_one": "{{count}} row needs attention",
+    "errorsTitle_other": "{{count}} rows need attention",
+    "downloadErrors": "Download error report",
+    "errorsFile": "errors",
+    "row": "Row",
+    "problem": "Problem",
+    "values": "Values",
+    "errors": {
+      "required": "{{field}} is missing",
+      "invalid": "Invalid value: {{field}}",
+      "not_found": "Not found: {{field}}",
+      "exists": "Already exists: {{field}}",
+      "duplicate_in_file": "The same record appears earlier in the file (skipped)",
+      "invalid_owner": "The owner is not a user in the workspace"
+    },
+    "open": {
+      "contacts": "View contacts",
+      "companies": "View companies",
+      "deals": "View deals"
+    },
+    "another": "Import another file",
+    "undo": "Undo import",
+    "undoTitle": "Undo the import?",
+    "undoBody": "The {{created}} records the import created are erased, even if they were changed since, and {{updated}} updated records get their previous values back.",
+    "undone": "Import undone",
+    "history": "Earlier imports",
+    "short": "{{created}} new · {{failed}} errors",
+    "badges": {
+      "queued": "Queued",
+      "running": "Running",
+      "done": "Done",
+      "failed": "Stopped",
+      "undone": "Undone"
+    }
+  },
+  "export": {
+    "button": "Export to CSV",
+    "done_one": "{{count}} record exported",
+    "done_other": "{{count}} records exported",
+    "truncated": "The first {{count}} of {{total}} records were exported"
+  },
+  "bulk": {
+    "label": "Actions for selected",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "reassign": "Change owner…",
+    "setStage": "Change stage…",
+    "addTag": "Add tag",
+    "tagName": "Tag name",
+    "clear": "Clear selection",
+    "confirmDelete_one": "Move {{count}} record to Trash?",
+    "confirmDelete_other": "Move {{count}} records to Trash?",
+    "reassigned_one": "{{count}} record has a new owner",
+    "reassigned_other": "{{count}} records have a new owner",
+    "updated_one": "{{count}} record updated",
+    "updated_other": "{{count}} records updated",
+    "deleted_one": "{{count}} record deleted",
+    "deleted_other": "{{count}} records deleted"
+  },
+  "search": {
+    "open": "Search",
+    "title": "Search the CRM",
+    "description": "Search contacts, companies and deals",
+    "placeholder": "Search contacts, companies, deals…",
+    "none": "No results for \"{{q}}\"",
+    "recent": "Recently viewed",
+    "noRecent": "Records you open show up here.",
+    "groups": {
+      "contact": "Contacts",
+      "company": "Companies",
+      "deal": "Deals"
+    },
+    "types": {
+      "contact": "Contact",
+      "company": "Company",
+      "deal": "Deal"
+    }
+  },
+  "duplicates": {
+    "title": "Duplicates",
+    "intro": "Contacts with the same name or phone number. Merge them to bring everything onto one contact.",
+    "noneTitle": "No duplicates",
+    "noneBody": "We found no contacts with the same name or phone number.",
+    "reasons": {
+      "name": "Same name",
+      "phone": "Same phone number"
+    },
+    "created": "created {{date}}",
+    "merge": "Merge",
+    "mergeTitle": "Merge contacts",
+    "mergeBody": "Pick the value to keep for each field that differs.",
+    "keeping": "Keeping",
+    "swap": "Swap which one is kept",
+    "field": "Field",
+    "keep": "Kept",
+    "mergeIn": "Merged in",
+    "identical": "All fields are the same.",
+    "moves": "Deals, activities, tasks and tags from {{name}} move over, and that contact is removed.",
+    "mergeButton": "Merge",
+    "merged": "Contacts merged",
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone",
+      "mobilePhone": "Mobile",
+      "title": "Title",
+      "companyId": "Company",
+      "ownerUserId": "Owner",
+      "lifecycleStage": "Lifecycle stage",
+      "leadSource": "Lead source",
+      "street": "Street address",
+      "postalCode": "Postal code",
+      "city": "City",
+      "country": "Country"
+    }
   }
 }

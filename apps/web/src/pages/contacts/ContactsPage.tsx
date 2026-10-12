@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Plus, Users } from 'lucide-react'
+import { Copy, Plus, Users } from 'lucide-react'
 import { LIFECYCLE_STAGES, type Contact } from '@crm/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { BulkBar } from '@/components/data/BulkBar'
+import { ListActions, type ExportColumn } from '@/components/data/ListActions'
+import { useSelection } from '@/hooks/useSelection'
 import { Field } from '@/components/Field'
 import { NativeSelect } from '@/components/NativeSelect'
 import { DataTable, type Column } from '@/components/records/DataTable'
@@ -32,6 +36,7 @@ export function ContactsPage() {
   const list = useContactList(apiParams)
   const picklists = usePicklists()
   const [creating, setCreating] = useState(false)
+  const selection = useSelection()
 
   const all: Column<Contact>[] = [
     { id: 'name', header: t('contacts.name'), sortKey: 'name', cell: (c) => fullName(c) },
@@ -50,18 +55,52 @@ export function ContactsPage() {
   const visible = all.filter((c) => columns.includes(c.id))
   const sort = params.get('sort') ?? 'name'
   const dir = (params.get('dir') ?? 'asc') as 'asc' | 'desc'
+  const exportColumns: ExportColumn<Contact>[] = [
+    { header: t('import.fields.firstName'), value: (c) => c.firstName },
+    { header: t('import.fields.lastName'), value: (c) => c.lastName },
+    { header: t('contacts.email'), value: (c) => c.email },
+    { header: t('contacts.phone'), value: (c) => c.phone },
+    { header: t('contacts.mobilePhone'), value: (c) => c.mobilePhone },
+    { header: t('contacts.title_field'), value: (c) => c.title },
+    { header: t('contacts.company'), value: (c) => c.company?.name },
+    { header: t('contacts.lifecycleStage'), value: (c) => t(`stages.${c.lifecycleStage}`) },
+    { header: t('contacts.leadSource'), value: (c) => picklistLabel(t, picklists.data, 'lead_source', c.leadSource) },
+    { header: t('import.fields.street'), value: (c) => c.street },
+    { header: t('import.fields.postalCode'), value: (c) => c.postalCode },
+    { header: t('contacts.city'), value: (c) => c.city },
+    { header: t('import.fields.country'), value: (c) => c.country },
+    { header: t('list.tags'), value: (c) => c.tags.join(', ') },
+    { header: t('list.owner'), value: (c) => c.owner?.name },
+    { header: t('contacts.marketingConsent'), value: (c) => (c.marketingConsent ? t('common.yes') : t('common.no')) },
+    { header: t('contacts.created'), value: (c) => c.createdAt.slice(0, 10) },
+  ]
   const filtered = [...params.keys()].some((k) => !['page', 'pageSize', 'sort', 'dir', 'cols', 'view'].includes(k))
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{t('contacts.title')}</h1>
-        {canWrite && (
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" aria-hidden />
-            {t('contacts.new')}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <ListActions
+            object="contacts"
+            params={apiParams}
+            columns={exportColumns}
+            extra={
+              canWrite && (
+                <DropdownMenuItem onSelect={() => navigate('/contacts/duplicates')}>
+                  <Copy className="size-4" aria-hidden />
+                  {t('duplicates.title')}
+                </DropdownMenuItem>
+              )
+            }
+          />
+          {canWrite && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="size-4" aria-hidden />
+              {t('contacts.new')}
+            </Button>
+          )}
+        </div>
       </div>
 
       <ListToolbar
@@ -117,8 +156,10 @@ export function ContactsPage() {
         />
       ) : (
         <>
+          {selection.ids.length > 0 && <BulkBar object="contacts" ids={selection.ids} onDone={selection.clear} />}
           <DataTable
             rows={list.data.items}
+            selection={canWrite ? { ...selection, label: fullName } : undefined}
             columns={visible}
             rowKey={(c) => c.id}
             rowHref={(c) => `/contacts/${c.id}`}

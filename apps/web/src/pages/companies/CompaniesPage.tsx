@@ -6,6 +6,9 @@ import { COMPANY_SIZES, type Company } from '@crm/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { BulkBar } from '@/components/data/BulkBar'
+import { ListActions, type ExportColumn } from '@/components/data/ListActions'
+import { useSelection } from '@/hooks/useSelection'
 import { Field } from '@/components/Field'
 import { NativeSelect } from '@/components/NativeSelect'
 import { DataTable, type Column } from '@/components/records/DataTable'
@@ -32,6 +35,7 @@ export function CompaniesPage() {
   const list = useCompanyList(apiParams)
   const picklists = usePicklists()
   const [creating, setCreating] = useState(false)
+  const selection = useSelection()
 
   const all: Column<Company>[] = [
     { id: 'name', header: t('companies.name'), sortKey: 'name', cell: (c) => c.name },
@@ -48,18 +52,38 @@ export function CompaniesPage() {
   const visible = all.filter((c) => columns.includes(c.id))
   const sort = params.get('sort') ?? 'name'
   const dir = (params.get('dir') ?? 'asc') as 'asc' | 'desc'
+  const exportColumns: ExportColumn<Company>[] = [
+    { header: t('companies.name'), value: (c) => c.name },
+    { header: t('companies.orgNumber'), value: (c) => c.orgNumber },
+    { header: t('import.fields.vatNumber'), value: (c) => c.vatNumber },
+    { header: t('companies.domain'), value: (c) => c.domain },
+    { header: t('companies.industry'), value: (c) => picklistLabel(t, picklists.data, 'industry', c.industry) },
+    { header: t('companies.size'), value: (c) => c.size },
+    { header: t('import.fields.phone'), value: (c) => c.phone },
+    { header: t('import.fields.street'), value: (c) => c.street },
+    { header: t('import.fields.postalCode'), value: (c) => c.postalCode },
+    { header: t('companies.city'), value: (c) => c.city },
+    { header: t('import.fields.country'), value: (c) => c.country },
+    { header: t('companies.contactCount'), value: (c) => c.contactCount },
+    { header: t('list.tags'), value: (c) => c.tags.join(', ') },
+    { header: t('list.owner'), value: (c) => c.owner?.name },
+    { header: t('contacts.created'), value: (c) => c.createdAt.slice(0, 10) },
+  ]
   const filtered = [...params.keys()].some((k) => !['page', 'pageSize', 'sort', 'dir', 'cols', 'view'].includes(k))
 
   return (
-    <div className="grid gap-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">{t('companies.title')}</h1>
-        {canWrite && (
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" aria-hidden />
-            {t('companies.new')}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          <ListActions object="companies" params={apiParams} columns={exportColumns} />
+          {canWrite && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="size-4" aria-hidden />
+              {t('companies.new')}
+            </Button>
+          )}
+        </div>
       </div>
 
       <ListToolbar
@@ -103,8 +127,10 @@ export function CompaniesPage() {
         />
       ) : (
         <>
+          {selection.ids.length > 0 && <BulkBar object="companies" ids={selection.ids} onDone={selection.clear} />}
           <DataTable
             rows={list.data.items}
+            selection={canWrite ? { ...selection, label: (c) => c.name } : undefined}
             columns={visible}
             rowKey={(c) => c.id}
             rowHref={(c) => `/companies/${c.id}`}
