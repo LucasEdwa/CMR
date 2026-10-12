@@ -36,6 +36,16 @@ export async function userIdByResetToken(token: string) {
   return v?.value ?? null
 }
 
+// The user a pending 2FA login belongs to, from the two-factor cookie set after the password step.
+// Only used to count wrong codes: Better Auth itself checks the cookie's signature.
+export async function userIdOfPendingTwoFactor(cookieHeader: string | undefined) {
+  const match = /(?:^|;\s*)(?:__Secure-)?crm\.two_factor=([^;]+)/.exec(cookieHeader ?? '')
+  const identifier = match?.[1] ? decodeURIComponent(match[1]).split('.')[0] : ''
+  if (!identifier) return null
+  const [v] = await db.select({ value: verifications.value }).from(verifications).where(eq(verifications.identifier, hashedIdentifier(identifier)))
+  return v?.value ?? null
+}
+
 // A response that sets a session cookie started a new session: whose is it?
 export async function userIdOfNewSession(setCookies: string[]) {
   for (const cookie of setCookies) {

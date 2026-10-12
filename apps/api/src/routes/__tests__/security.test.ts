@@ -158,6 +158,22 @@ describe('two-factor login', () => {
     expect(types).toContain('two_factor_enabled')
   })
 
+  it('locks the code step after 10 wrong codes for the account, from any IP', async () => {
+    const { owner, email, password } = await setup()
+    const { totpURI } = await enable2fa(owner, password)
+    for (let i = 0; i < 10; i++) {
+      const guesser = new TestClient(app)
+      await ok(guesser.post('/api/auth/sign-in/email', { email, password }))
+      expect((await guesser.post('/api/auth/two-factor/verify-totp', { code: '000000' })).statusCode).toBe(401)
+    }
+    const next = new TestClient(app)
+    await ok(next.post('/api/auth/sign-in/email', { email, password }))
+    const blocked = await next.post('/api/auth/two-factor/verify-totp', { code: totp(totpURI) })
+    expect(blocked.statusCode).toBe(429)
+    expect(blocked.json().error.code).toBe('rate_limited')
+    expect((await next.get('/api/me')).statusCode).toBe(401)
+  })
+
   it('a workspace can require it: members without 2FA can only reach /me until they set it up', async () => {
     const { owner, password } = await setup()
     const erik = await addMember(app, owner, 'member', 'Erik')

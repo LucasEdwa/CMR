@@ -2,9 +2,23 @@ import type { FastifyInstance } from 'fastify'
 import { fromNodeHeaders } from 'better-auth/node'
 import { auth } from '../auth/auth.js'
 import { env } from '../env.js'
-import { clearFailures, isLockedOut, recordFailure } from '../auth/login-failures.js'
+import {
+  clearFailures,
+  clearTwoFactorFailures,
+  isLockedOut,
+  isTwoFactorLockedOut,
+  recordFailure,
+  recordTwoFactorFailure,
+} from '../auth/login-failures.js'
 import { HttpError } from '../errors.js'
-import { recordSecurityEvent, twoFactorEnabled, userIdByEmail, userIdByResetToken, userIdOfNewSession } from '../auth/security-log.js'
+import {
+  recordSecurityEvent,
+  twoFactorEnabled,
+  userIdByEmail,
+  userIdByResetToken,
+  userIdOfNewSession,
+  userIdOfPendingTwoFactor,
+} from '../auth/security-log.js'
 
 // Better Auth's own rate limits read X-Forwarded-For. Hand it the IP Fastify resolved through
 // the trusted proxies, never the raw header a client could write itself.
@@ -15,6 +29,8 @@ export function withClientIp(headers: Headers, ip: string) {
 
 // Paths that start a session (a successful one is logged as a login).
 const LOGIN_PATHS = ['/sign-in/email', '/two-factor/verify-totp', '/two-factor/verify-backup-code', '/verify-email']
+// Paths that check a 2FA code (wrong codes are counted per account).
+const TWO_FACTOR_CODE_PATHS = ['/two-factor/verify-totp', '/two-factor/verify-backup-code']
 // Paths whose security event needs the current user, read before Better Auth acts.
 const SESSION_PATHS = ['/sign-out', '/change-password', '/two-factor/']
 
@@ -37,6 +53,13 @@ export async function authRoutes(app: FastifyInstance) {
         ? await auth.api.getSession({ headers: fromNodeHeaders(request.headers) }).catch(() => null)
         : null
       const twoFactorBefore = before && path.startsWith('/two-factor/') ? await twoFactorEnabled(before.user.id) : null
+      const codeUser =
+        request.method === 'POST' && TWO_FACTOR_CODE_PATHS.includes(path)
+          ? (before?.user.id ?? (await userIdOfPendingTwoFactor(request.headers.cookie)))
+          : null
+      if (codeUser && (await isTwoFactorLockedOut(codeUser))) {
+        throw new HttpError(429, 'rate_limited', 'Too many wrong codes. Try again in 15 minutes.')
+      }
       const resetUser =
         path === '/reset-password' ? await userIdByResetToken(String((request.body as { token?: unknown } | undefined)?.token ?? '')) : null
 
@@ -49,6 +72,8 @@ export async function authRoutes(app: FastifyInstance) {
       )
       if (isSignIn && response.status === 401) await recordFailure(request.ip, email)
       if (isSignIn && response.status === 200) await clearFailures(request.ip, email)
+      if (codeUser && response.status === 401) await recordTwoFactorFailure(codeUser)
+      if (codeUser && response.status === 200) await clearTwoFactorFailures(codeUser)
 
       const ok = response.status < 400
       const cookies = response.headers.getSetCookie()
