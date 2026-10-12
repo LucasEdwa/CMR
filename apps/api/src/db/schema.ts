@@ -1,6 +1,21 @@
 import { sql } from 'drizzle-orm'
-import { bigint, boolean, date, doublePrecision, foreignKey, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
-import { COMPANY_SIZES, CONSENT_BASES, DEAL_STATUSES, DEFAULT_STALE_DAYS, LIFECYCLE_STAGES, PICKLIST_KINDS, ROLES, SAVED_VIEW_OBJECTS } from '@crm/shared'
+import { bigint, boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, time, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import {
+  ACTIVITY_TYPES,
+  CALL_OUTCOMES,
+  COMPANY_SIZES,
+  CONSENT_BASES,
+  DEAL_STATUSES,
+  DEFAULT_STALE_DAYS,
+  EMAIL_DIRECTIONS,
+  LIFECYCLE_STAGES,
+  NOTIFICATION_TYPES,
+  PICKLIST_KINDS,
+  ROLES,
+  SAVED_VIEW_OBJECTS,
+  TASK_PRIORITIES,
+  type RichDoc,
+} from '@crm/shared'
 
 // Every table with a tenant_id column needs RLS enabled + forced and a policy.
 // Policies live in hand-written SQL migrations (drizzle/*_rls*.sql); the RLS meta-test enforces this.
@@ -37,6 +52,8 @@ export const users = pgTable(
     emailVerified: boolean('email_verified').notNull().default(false),
     image: text('image'),
     locale: text('locale').notNull().default('sv'),
+    // IANA name; null means the workspace timezone. Drives "today" and reminder times.
+    timezone: text('timezone'),
     ...timestamps,
   },
   (t) => [uniqueIndex('users_email_lower_idx').on(sql`lower(${t.email})`)],
@@ -468,4 +485,125 @@ export const picklistItems = pgTable(
     ...timestamps,
   },
   (t) => [uniqueIndex('picklist_items_key_idx').on(t.tenantId, t.kind, t.key)],
+)
+
+// ---------------------------------------------------------------------------
+// Activities, tasks and notifications (Sprint 4)
+
+export const activityType = pgEnum('activity_type', ACTIVITY_TYPES)
+export const callOutcome = pgEnum('call_outcome', CALL_OUTCOMES)
+export const emailDirection = pgEnum('email_direction', EMAIL_DIRECTIONS)
+export const taskPriority = pgEnum('task_priority', TASK_PRIORITIES)
+export const notificationType = pgEnum('notification_type', NOTIFICATION_TYPES)
+
+export const activities = pgTable(
+  'activities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    type: activityType('type').notNull(),
+    subject: text('subject'),
+    // Editor JSON, validated against the shared allowlist; body_text is its plain-text form.
+    body: jsonb('body').$type<RichDoc>(),
+    bodyText: text('body_text').notNull().default(''),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    durationMinutes: integer('duration_minutes'),
+    outcome: callOutcome('outcome'),
+    direction: emailDirection('direction'),
+    pinned: boolean('pinned').notNull().default(false),
+    authorUserId: uuid('author_user_id').references(() => users.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [unique().on(t.tenantId, t.id), index('activities_tenant_occurred_idx').on(t.tenantId, t.occurredAt.desc())],
+)
+
+// Which records an activity shows on. Exactly one of the three ids is set per row.
+export const activityLinks = pgTable(
+  'activity_links',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    activityId: uuid('activity_id').notNull(),
+    contactId: uuid('contact_id'),
+    companyId: uuid('company_id'),
+    dealId: uuid('deal_id'),
+  },
+  (t) => [
+    foreignKey({ columns: [t.tenantId, t.activityId], foreignColumns: [activities.tenantId, activities.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.contactId], foreignColumns: [contacts.tenantId, contacts.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.companyId], foreignColumns: [companies.tenantId, companies.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.dealId], foreignColumns: [deals.tenantId, deals.id] }).onDelete('cascade'),
+    check('activity_links_one_record', sql`num_nonnulls(${t.contactId}, ${t.companyId}, ${t.dealId}) = 1`),
+    index('activity_links_activity_idx').on(t.tenantId, t.activityId),
+    uniqueIndex('activity_links_contact_idx').on(t.tenantId, t.contactId, t.activityId).where(sql`${t.contactId} is not null`),
+    uniqueIndex('activity_links_company_idx').on(t.tenantId, t.companyId, t.activityId).where(sql`${t.companyId} is not null`),
+    uniqueIndex('activity_links_deal_idx').on(t.tenantId, t.dealId, t.activityId).where(sql`${t.dealId} is not null`),
+  ],
+)
+
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    notes: text('notes'),
+    // Calendar date and optional wall-clock time as entered, in the assignee's timezone.
+    dueDate: date('due_date').notNull(),
+    dueTime: time('due_time'),
+    // When the task becomes overdue: due_time, or the end of due_date, in the assignee's timezone.
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    priority: taskPriority('priority').notNull().default('normal'),
+    assigneeUserId: uuid('assignee_user_id').references(() => users.id, { onDelete: 'set null' }),
+    // At most one related record. Tasks go with their record when it is erased.
+    contactId: uuid('contact_id'),
+    companyId: uuid('company_id'),
+    dealId: uuid('deal_id'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    completedByUserId: uuid('completed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    // The due date the reminder email was sent for; a new due date gets a new reminder.
+    reminderSentFor: date('reminder_sent_for'),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  (t) => [
+    unique().on(t.tenantId, t.id),
+    foreignKey({ columns: [t.tenantId, t.contactId], foreignColumns: [contacts.tenantId, contacts.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.companyId], foreignColumns: [companies.tenantId, companies.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.dealId], foreignColumns: [deals.tenantId, deals.id] }).onDelete('cascade'),
+    check('tasks_one_record', sql`num_nonnulls(${t.contactId}, ${t.companyId}, ${t.dealId}) <= 1`),
+    index('tasks_assignee_open_idx').on(t.tenantId, t.assigneeUserId, t.dueAt).where(sql`${t.completedAt} is null`),
+    index('tasks_assignee_done_idx').on(t.tenantId, t.assigneeUserId, t.completedAt.desc()).where(sql`${t.completedAt} is not null`),
+    index('tasks_contact_idx').on(t.tenantId, t.contactId),
+    index('tasks_company_idx').on(t.tenantId, t.companyId),
+    index('tasks_deal_idx').on(t.tenantId, t.dealId, t.dueAt),
+  ],
+)
+
+// Only the recipient can read, mark or delete a notification (restrictive RLS policies);
+// anyone in the workspace can create one for a member.
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: notificationType('type').notNull(),
+    actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+    // Snapshot for display and the link: { title, record: {type,id,name} | null, taskId?, activityId? }.
+    data: jsonb('data').notNull(),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('notifications_user_idx').on(t.tenantId, t.userId, t.createdAt.desc())],
 )

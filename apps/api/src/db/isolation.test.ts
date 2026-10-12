@@ -2,7 +2,25 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { createDb } from './client.js'
-import { auditLog, companies, contacts, deals, invitations, memberships, pipelineStages, pipelines, picklistItems, savedViews, tags, tenants, users } from './schema.js'
+import {
+  activities,
+  activityLinks,
+  auditLog,
+  companies,
+  contacts,
+  deals,
+  invitations,
+  memberships,
+  notifications,
+  pipelineStages,
+  pipelines,
+  picklistItems,
+  savedViews,
+  tags,
+  tasks,
+  tenants,
+  users,
+} from './schema.js'
 import { withTenant, withUser, type TenantContext } from './tenant.js'
 import { audit } from './audit.js'
 import { createTenantWithUser, pgErrorOf } from '../test/factories.js'
@@ -43,7 +61,14 @@ beforeAll(async () => {
           .insert(pipelineStages)
           .values({ tenantId: ctx.tenantId, pipelineId: pipeline!.id, name: 'S', position: 0 })
           .returning()
-        await tx.insert(deals).values({ tenantId: ctx.tenantId, name: 'Iso', pipelineId: pipeline!.id, stageId: stage!.id })
+        const [deal] = await tx
+          .insert(deals)
+          .values({ tenantId: ctx.tenantId, name: 'Iso', pipelineId: pipeline!.id, stageId: stage!.id })
+          .returning()
+        const [activity] = await tx.insert(activities).values({ tenantId: ctx.tenantId, type: 'note', bodyText: 'Iso' }).returning()
+        await tx.insert(activityLinks).values({ tenantId: ctx.tenantId, activityId: activity!.id, dealId: deal!.id })
+        await tx.insert(tasks).values({ tenantId: ctx.tenantId, title: 'Iso', dueDate: '2026-11-09', dueAt: new Date(), dealId: deal!.id })
+        await tx.insert(notifications).values({ tenantId: ctx.tenantId, userId: ctx.userId, type: 'mention', data: { title: 'Iso' } })
         await tx.insert(picklistItems).values({ tenantId: ctx.tenantId, kind: 'lost_reason', key: 'iso', position: 0 })
         await tx.insert(savedViews).values({
           tenantId: ctx.tenantId,
@@ -72,6 +97,10 @@ const tenantTables = [
   { name: 'pipelines', table: pipelines },
   { name: 'pipeline_stages', table: pipelineStages },
   { name: 'deals', table: deals },
+  { name: 'activities', table: activities },
+  { name: 'activity_links', table: activityLinks },
+  { name: 'tasks', table: tasks },
+  { name: 'notifications', table: notifications },
 ] as const
 
 describe.each(tenantTables)('$name isolation', ({ table }) => {
@@ -125,6 +154,52 @@ describe('composite foreign keys', () => {
     expect(
       await pgErrorOf(
         withTenant(A, (tx) => tx.insert(contacts).values({ tenantId: A.tenantId, firstName: 'X', companyId: bCompany!.id }), db),
+      ),
+    ).toMatch(/foreign key/)
+  })
+})
+
+describe('notifications', () => {
+  it('are only visible to their recipient, while workspace colleagues can create them', async () => {
+    const colleague = { ...A, userId: randomUUID(), role: 'member' as const }
+    await db.insert(users).values({ id: colleague.userId, email: `${colleague.userId}@test.local`, name: 'Colleague' })
+    await withTenant(A, (tx) => tx.insert(memberships).values({ tenantId: A.tenantId, userId: colleague.userId, role: 'member' }), db)
+
+    const seen = await withTenant(colleague, (tx) => tx.select().from(notifications), db)
+    expect(seen).toHaveLength(0)
+    await withTenant(colleague, (tx) => tx.insert(notifications).values({ tenantId: A.tenantId, userId: A.userId, type: 'mention', data: { title: 'Hej' } }), db)
+    const mine = await withTenant(A, (tx) => tx.select().from(notifications), db)
+    expect(mine.map((n) => (n.data as { title: string }).title)).toContain('Hej')
+
+    const marked = await withTenant(colleague, (tx) => tx.update(notifications).set({ readAt: new Date() }).returning(), db)
+    expect(marked).toHaveLength(0)
+    const removed = await withTenant(colleague, (tx) => tx.delete(notifications).returning(), db)
+    expect(removed).toHaveLength(0)
+  })
+
+  it('cannot be sent to someone outside the workspace', async () => {
+    expect(
+      await pgErrorOf(
+        withTenant(A, (tx) => tx.insert(notifications).values({ tenantId: A.tenantId, userId: B.userId, type: 'mention', data: { title: 'x' } }), db),
+      ),
+    ).toMatch(/row-level security/)
+  })
+
+  it('can only be marked read, never rewritten', async () => {
+    await withTenant(A, (tx) => tx.update(notifications).set({ readAt: new Date() }), db)
+    expect(await pgErrorOf(withTenant(A, (tx) => tx.update(notifications).set({ data: { title: 'changed' } }), db))).toMatch(
+      /permission denied/,
+    )
+  })
+})
+
+describe('activity links', () => {
+  it("cannot attach an activity to another tenant's deal", async () => {
+    const [bDeal] = await withTenant(B, (tx) => tx.select().from(deals).limit(1), db)
+    const [aActivity] = await withTenant(A, (tx) => tx.select().from(activities).limit(1), db)
+    expect(
+      await pgErrorOf(
+        withTenant(A, (tx) => tx.insert(activityLinks).values({ tenantId: A.tenantId, activityId: aActivity!.id, dealId: bDeal!.id }), db),
       ),
     ).toMatch(/foreign key/)
   })
