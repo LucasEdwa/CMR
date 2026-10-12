@@ -3,6 +3,8 @@ import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { Home } from '@/pages/Home'
 import { TasksPage } from '@/pages/tasks/TasksPage'
+import { ImportPage } from '@/pages/import/ImportPage'
+import { DuplicatesPage } from '@/pages/contacts/DuplicatesPage'
 import { TrashPage } from '@/pages/TrashPage'
 import { ContactsPage } from '@/pages/contacts/ContactsPage'
 import { ContactDetail } from '@/pages/contacts/ContactDetail'
@@ -46,12 +48,14 @@ const router = createBrowserRouter([
         children: [
           { path: '/', element: <Home /> },
           { path: '/contacts', element: <ContactsPage /> },
+          { path: '/contacts/duplicates', element: <DuplicatesPage /> },
           { path: '/contacts/:id', element: <ContactDetail /> },
           { path: '/companies', element: <CompaniesPage /> },
           { path: '/companies/:id', element: <CompanyDetail /> },
           { path: '/deals', element: <DealsPage /> },
           { path: '/deals/:id', element: <DealDetail /> },
           { path: '/tasks', element: <TasksPage /> },
+          { path: '/import', element: <ImportPage /> },
           { path: '/trash', element: <TrashPage /> },
           {
             path: '/settings',
