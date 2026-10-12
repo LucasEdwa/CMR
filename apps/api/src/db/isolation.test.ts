@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { createDb } from './client.js'
-import { auditLog, memberships, tenants, users } from './schema.js'
+import { auditLog, invitations, memberships, tenants, users } from './schema.js'
 import { withTenant, withUser, type TenantContext } from './tenant.js'
 import { audit } from './audit.js'
 import { createTenantWithUser, pgErrorOf } from '../test/factories.js'
@@ -19,6 +19,20 @@ beforeAll(async () => {
   B = await createTenantWithUser('owner', db)
   await withTenant(A, (tx) => audit(tx, A, { action: 'create', entityType: 'test', after: { tenant: 'A' } }), db)
   await withTenant(B, (tx) => audit(tx, B, { action: 'create', entityType: 'test', after: { tenant: 'B' } }), db)
+  for (const ctx of [A, B]) {
+    await withTenant(
+      ctx,
+      (tx) =>
+        tx.insert(invitations).values({
+          tenantId: ctx.tenantId,
+          email: `${randomUUID()}@test.local`,
+          role: 'member',
+          tokenHash: randomUUID(),
+          expiresAt: new Date(Date.now() + 60_000),
+        }),
+      db,
+    )
+  }
 })
 
 afterAll(() => client.end())
@@ -26,6 +40,7 @@ afterAll(() => client.end())
 const tenantTables = [
   { name: 'memberships', table: memberships },
   { name: 'audit_log', table: auditLog },
+  { name: 'invitations', table: invitations },
 ] as const
 
 describe.each(tenantTables)('$name isolation', ({ table }) => {

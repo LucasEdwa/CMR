@@ -15,6 +15,41 @@
       "when": 1791798173630,
       "tag": "0001_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791799777291,
+      "tag": "0002_users_drop_placeholder_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791799794800,
+      "tag": "0003_auth_and_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791799795538,
+      "tag": "0004_invitations_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791800032210,
+      "tag": "0005_accounts_provider_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791800511236,
+      "tag": "0006_login_failures",
+      "breakpoints": true
     }
   ]
 }
