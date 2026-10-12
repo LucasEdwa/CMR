@@ -31,6 +31,7 @@ const RULES: Record<string, Rule> = {
   'GET /api/workspace': 'all',
   'PATCH /api/workspace': 'managers',
   'DELETE /api/workspace': 'owners',
+  'POST /api/workspace/cancel-deletion': 'owners',
   'GET /api/workspace/members': 'all',
   'PATCH /api/workspace/members/:userId': 'managers',
   // Anyone may remove themselves (leave); removing someone else needs a manager.

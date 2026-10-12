@@ -9,10 +9,13 @@ import { db } from '../db/client.js'
 import { memberships, sessions, tenants } from '../db/schema.js'
 import { withTenant, withUser } from '../db/tenant.js'
 import { retimeOpenTasks } from '../services/tasks.js'
+import { cancelDeletion, checkPassword, scheduleDeletion } from '../services/workspaceDeletion.js'
+import { limit } from '../http/limits.js'
 import { HttpError } from '../errors.js'
 import { isUniqueViolation } from '../db/errors.js'
 
-const toWorkspace = (t: typeof tenants.$inferSelect): Workspace => workspaceSchema.parse(t)
+const toWorkspace = (t: typeof tenants.$inferSelect): Workspace =>
+  workspaceSchema.parse({ ...t, deletionScheduledFor: t.deletionScheduledFor?.toISOString() ?? null })
 
 export async function setActiveWorkspace(sessionId: string, tenantId: string | null) {
   await db.update(sessions).set({ activeTenantId: tenantId, updatedAt: new Date() }).where(eq(sessions.id, sessionId))
@@ -86,19 +89,23 @@ export async function workspaceRoutes(app: FastifyInstance) {
     return toWorkspace(tenant)
   })
 
-  // Erases the workspace and everything in it. The name must be typed again to confirm.
-  app.delete('/workspace', { preHandler: inWorkspace(OWNERS) }, async (request) => {
+  // Asks for the workspace to be erased after the grace period. Needs the name typed again and
+  // the owner's password; all owners are emailed and any of them can cancel until then.
+  app.delete('/workspace', { preHandler: inWorkspace(OWNERS), config: limit('delete-workspace', 5, '1 hour') }, async (request) => {
     const ctx = requireTenant(request, OWNERS)
-    const { confirm } = deleteWorkspaceSchema.parse(request.body)
-    await withTenant(ctx, async (tx) => {
-      const [tenant] = await tx.select().from(tenants).where(eq(tenants.id, ctx.tenantId))
-      if (!tenant || tenant.name.trim().toLowerCase() !== confirm.toLowerCase()) {
-        throw new HttpError(400, 'confirm_mismatch', 'Type the workspace name to confirm')
-      }
-      // Cascades to every table; sessions pointing at it fall back to another workspace.
-      await tx.delete(tenants).where(eq(tenants.id, ctx.tenantId))
-    })
-    request.log.info({ tenantId: ctx.tenantId, userId: ctx.userId }, 'workspace deleted')
-    return { ok: true }
+    const { confirm, password } = deleteWorkspaceSchema.parse(request.body)
+    const [current] = await withTenant(ctx, (tx) => tx.select().from(tenants).where(eq(tenants.id, ctx.tenantId)))
+    if (!current || current.name.trim().toLowerCase() !== confirm.toLowerCase()) {
+      throw new HttpError(400, 'confirm_mismatch', 'Type the workspace name to confirm')
+    }
+    await checkPassword(ctx.userId, password)
+    const tenant = await scheduleDeletion(ctx, request.authSession!.user.name)
+    request.log.info({ tenantId: ctx.tenantId, userId: ctx.userId }, 'workspace deletion scheduled')
+    return toWorkspace(tenant)
+  })
+
+  app.post('/workspace/cancel-deletion', { preHandler: inWorkspace(OWNERS) }, async (request) => {
+    const ctx = requireTenant(request, OWNERS)
+    return toWorkspace(await cancelDeletion(ctx, request.authSession!.user.name))
   })
 }

@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { BASE_ORIGIN, apiPost, colleague, expect, freshCompany, test } from './support/fixtures.ts'
+import { BASE_ORIGIN, NEW_PASSWORD, apiPost, colleague, expect, freshCompany, test } from './support/fixtures.ts'
 
 const call = (page: Page, method: 'POST' | 'PATCH' | 'DELETE' | 'GET', path: string, data: object = {}) =>
   page.request.fetch(`${BASE_ORIGIN}/api${path}`, { method, data: method === 'GET' ? undefined : data, headers: { origin: BASE_ORIGIN } })
@@ -60,14 +60,19 @@ test('an admin manages users but cannot delete the workspace', async ({ page, br
   await expect(adam.page.getByRole('button', { name: 'Radera företaget…' })).toHaveCount(0)
   expect((await call(adam.page, 'DELETE', '/workspace', { confirm: name })).status()).toBe(403)
 
-  // The owner can.
+  // The owner can, with the name and the password; it happens after 7 days and can be cancelled.
   await page.goto('/settings')
   await page.getByRole('button', { name: 'Radera företaget…' }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByRole('button', { name: 'Radera för alltid' })).toBeDisabled()
   await dialog.getByLabel(`Skriv "${name}" för att bekräfta`).fill(name)
-  await dialog.getByRole('button', { name: 'Radera för alltid' }).click()
-  await expect(page.getByText(`${name} är raderat`)).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Radera om 7 dagar' })).toBeDisabled()
+  await dialog.getByLabel('Nuvarande lösenord').fill(NEW_PASSWORD)
+  await dialog.getByRole('button', { name: 'Radera om 7 dagar' }).click()
+  await expect(page.getByText('Företaget raderas om 7 dagar. Alla ägare har fått ett mejl.')).toBeVisible()
+  await adam.page.goto(`${BASE_ORIGIN}/contacts`)
+  await expect(adam.page.getByRole('alert').filter({ hasText: `${name} raderas` })).toBeVisible()
+  await page.getByRole('button', { name: 'Ångra raderingen' }).click()
+  await expect(page.getByText('Raderingen är ångrad')).toBeVisible()
   await adam.close()
 })
 

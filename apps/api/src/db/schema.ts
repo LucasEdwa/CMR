@@ -46,6 +46,9 @@ export const tenants = pgTable('tenants', {
   ownRecordsOnly: boolean('own_records_only').notNull().default(false),
   // Everyone in the workspace must use two-factor login (set by owners and admins).
   requireTwoFactor: boolean('require_two_factor').notNull().default(false),
+  // An owner asked to delete the workspace: it is erased at this time unless an owner cancels.
+  deletionScheduledFor: timestamp('deletion_scheduled_for', { withTimezone: true }),
+  deletionRequestedBy: uuid('deletion_requested_by'),
   ...timestamps,
 })
 
