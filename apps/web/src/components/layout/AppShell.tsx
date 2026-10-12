@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { useActiveWorkspace, useMe, useResetSession } from '@/hooks/useMe'
+import { useActiveWorkspace, useMe, useResetSession, useWorkspaceCacheGuard } from '@/hooks/useMe'
 import { send } from '@/lib/api'
 import { authApi } from '@/lib/auth'
 import { errorMessage } from '@/lib/errors'
@@ -150,6 +150,7 @@ function UserMenu() {
 
 export function AppShell() {
   const { t } = useTranslation()
+  useWorkspaceCacheGuard()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
