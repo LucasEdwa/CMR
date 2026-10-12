@@ -25,6 +25,7 @@ import { SettingsLayout } from '@/pages/settings/SettingsLayout'
 import { WorkspaceSettings } from '@/pages/settings/WorkspaceSettings'
 import { PipelineSettings } from '@/pages/settings/PipelineSettings'
 import { PicklistSettings } from '@/pages/settings/PicklistSettings'
+import { AuditLog } from '@/pages/settings/AuditLog'
 import { DealsPage } from '@/pages/deals/DealsPage'
 import { DealDetail } from '@/pages/deals/DealDetail'
 
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
               { path: 'profile', element: <Profile /> },
               { path: 'pipelines', element: <PipelineSettings /> },
               { path: 'lists', element: <PicklistSettings /> },
+              { path: 'audit', element: <AuditLog /> },
             ],
           },
         ],

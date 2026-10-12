@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { HistoryLink } from '@/components/records/HistoryLink'
 import { ConfirmDialog } from '@/components/records/ConfirmDialog'
 import { DetailList, RecordNotFound } from '@/components/records/DetailParts'
 import { useActiveWorkspace } from '@/hooks/useMe'
@@ -72,6 +73,7 @@ export function CompanyDetail() {
         </div>
         {canWrite && (
           <div className="flex gap-2">
+            <HistoryLink record={{ type: 'company', id: c.id }} />
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="size-4" aria-hidden />
               {t('common.edit')}

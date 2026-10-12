@@ -45,6 +45,10 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 - Every table with `tenant_id` gets RLS **enabled and forced** plus policies in a hand-written migration (`pnpm db:generate --custom --name <name>_rls`). `src/db/rls-meta.test.ts` fails CI if one is missing.
 - All tenant queries go through `withTenant(ctx, tx => ...)`, which sets the context transaction-locally.
 - Every mutation calls `audit(tx, ctx, {...})` in the same transaction. The audit log is append-only for `app_user`.
+- Roles are enforced twice: `inWorkspace(WRITERS | MANAGERS | OWNERS)` on each route, and restrictive RLS policies on `app.role` (migration 0017). Viewers cannot write records even with a direct query; members cannot change pipelines, lists, members or invitations. An RLS refusal becomes a 403.
+- `src/routes/__tests__/permissions.test.ts` calls every route as every role. A new route without an entry in its rule table fails the test.
+- The `system` role is for work the server starts after its own checks (default pipeline and lists, accepting a verified invitation, background jobs). It never comes from a request; use `asSystem(tx, ctx, fn)` and keep it rare.
+- "Own records only" (workspace setting): members and viewers only see contacts, companies and deals they own, enforced in RLS.
 - New queues go in `src/jobs/queues.ts`; job payloads always carry `tenantId` and `userId`. Run `pnpm db:migrate` after adding one: the migrate script creates the queues.
 - Task reminders: one `tasks.reminder` job per task and due date, at 08:00 in the assignee's timezone (their own, else the workspace's). The job re-checks the task before emailing, so moved, reassigned or completed tasks are skipped.
 

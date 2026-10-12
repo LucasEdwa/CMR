@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -12,7 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Field } from '@/components/Field'
 import { NativeSelect } from '@/components/NativeSelect'
-import { ME_KEY, useActiveWorkspace } from '@/hooks/useMe'
+import { ME_KEY, useActiveWorkspace, useResetSession } from '@/hooks/useMe'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { api, send } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
 import { formatWithPattern } from '@/lib/format'
@@ -23,7 +25,7 @@ const WORKSPACE_KEY = ['workspace'] as const
 export function WorkspaceSettings() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-  const { canManage } = useActiveWorkspace()
+  const { canManage, role } = useActiveWorkspace()
   const workspace = useQuery({ queryKey: WORKSPACE_KEY, queryFn: () => api('/workspace', workspaceSchema) })
   const timezones = useMemo(() => Intl.supportedValuesOf('timeZone'), [])
   const form = useForm<UpdateWorkspaceInput, unknown, z.output<typeof updateWorkspaceSchema>>({
@@ -49,6 +51,7 @@ export function WorkspaceSettings() {
 
   const sample = new Date()
   return (
+    <div className="grid gap-10">
     <form className="grid max-w-md gap-4" onSubmit={form.handleSubmit((v) => save.mutate(v))} noValidate>
       {!canManage && (
         <Alert>
@@ -92,6 +95,13 @@ export function WorkspaceSettings() {
             ))}
           </NativeSelect>
         </Field>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1" {...form.register('ownRecordsOnly')} />
+          <span>
+            <span className="font-medium">{t('settings.ownRecordsOnly')}</span>
+            <span className="text-muted-foreground block">{t('settings.ownRecordsOnlyHint')}</span>
+          </span>
+        </label>
         {canManage && (
           <Button type="submit" className="justify-self-start" disabled={isSubmitting || save.isPending || !isDirty}>
             {t('common.save')}
@@ -99,5 +109,59 @@ export function WorkspaceSettings() {
         )}
       </fieldset>
     </form>
+    {role === 'owner' && <DeleteWorkspace name={workspace.data.name} />}
+    </div>
+  )
+}
+
+// Owners only: erases the workspace and everything in it after the name is typed again.
+function DeleteWorkspace({ name }: { name: string }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const reset = useResetSession()
+  const [open, setOpen] = useState(false)
+  const [confirm, setConfirm] = useState('')
+  const remove = useMutation({
+    mutationFn: () => send('DELETE', '/workspace', { confirm }),
+    onSuccess: async () => {
+      toast.success(t('settings.deleted', { name }))
+      await reset()
+      navigate('/')
+    },
+    onError: (err) => toast.error(errorMessage(t, err)),
+  })
+  return (
+    <section className="border-destructive/40 grid max-w-md gap-3 rounded-lg border p-4" aria-labelledby="danger-zone">
+      <h2 id="danger-zone" className="text-destructive font-semibold">
+        {t('settings.dangerZone')}
+      </h2>
+      <p className="text-muted-foreground text-sm">{t('settings.deleteWorkspaceBody')}</p>
+      <Button variant="destructive" className="justify-self-start" onClick={() => setOpen(true)}>
+        {t('settings.deleteWorkspace')}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('settings.deleteWorkspaceTitle', { name })}</DialogTitle>
+            <DialogDescription>{t('settings.deleteWorkspaceConfirm')}</DialogDescription>
+          </DialogHeader>
+          <Field id="confirm-name" label={t('settings.typeName', { name })}>
+            <Input id="confirm-name" value={confirm} autoComplete="off" onChange={(e) => setConfirm(e.target.value)} />
+          </Field>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={confirm.trim().toLowerCase() !== name.trim().toLowerCase() || remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              {t('settings.deleteForever')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
   )
 }
