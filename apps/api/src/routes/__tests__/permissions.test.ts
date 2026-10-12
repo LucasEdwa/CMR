@@ -20,6 +20,10 @@ const RULES: Record<string, Rule> = {
   // Logged in, no workspace needed.
   'GET /api/me': 'user',
   'PATCH /api/me': 'user',
+  'GET /api/me/sessions': 'user',
+  'DELETE /api/me/sessions/:id': 'user',
+  'POST /api/me/sessions/revoke-others': 'user',
+  'GET /api/me/security-events': 'user',
   'POST /api/workspaces': 'user',
   'POST /api/workspaces/switch': 'user',
 

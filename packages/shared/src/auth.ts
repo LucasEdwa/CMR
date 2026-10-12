@@ -55,6 +55,7 @@ export const updateWorkspaceSchema = z.object({
   timezone: z.string().refine(isTimezone, 'invalid_timezone').optional(),
   dateFormat: z.enum(DATE_FORMATS).optional(),
   ownRecordsOnly: z.boolean().optional(),
+  requireTwoFactor: z.boolean().optional(),
 })
 export type UpdateWorkspaceInput = z.input<typeof updateWorkspaceSchema>
 
@@ -67,6 +68,7 @@ export const workspaceSchema = z.object({
   timezone: z.string(),
   dateFormat: z.enum(DATE_FORMATS),
   ownRecordsOnly: z.boolean(),
+  requireTwoFactor: z.boolean(),
 })
 export type Workspace = z.infer<typeof workspaceSchema>
 
@@ -78,9 +80,12 @@ export const meSchema = z.object({
     locale: localeSchema,
     // Null means "use the workspace timezone".
     timezone: z.string().nullable(),
+    twoFactorEnabled: z.boolean(),
   }),
   workspaces: z.array(z.object({ id: z.uuid(), name: z.string(), slug: z.string(), role: roleSchema })),
   activeWorkspaceId: z.uuid().nullable(),
+  // The active workspace requires two-factor login and this user has not set it up yet.
+  twoFactorSetupRequired: z.boolean(),
 })
 export type Me = z.infer<typeof meSchema>
 
@@ -136,3 +141,35 @@ export const deleteWorkspaceSchema = z.object({
   // The workspace name, typed again to confirm.
   confirm: z.string().trim().min(1),
 })
+
+// ---- account security -----------------------------------------------------------
+
+export const SECURITY_EVENT_TYPES = [
+  'login',
+  'login_failed',
+  'logout',
+  'password_changed',
+  'two_factor_enabled',
+  'two_factor_disabled',
+  'sessions_revoked',
+] as const
+export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number]
+
+export const securityEventSchema = z.object({
+  id: z.uuid(),
+  type: z.enum(SECURITY_EVENT_TYPES),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  createdAt: z.string(),
+})
+export type SecurityEvent = z.infer<typeof securityEventSchema>
+
+export const sessionInfoSchema = z.object({
+  id: z.string(),
+  current: z.boolean(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type SessionInfo = z.infer<typeof sessionInfoSchema>

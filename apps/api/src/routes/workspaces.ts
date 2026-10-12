@@ -68,6 +68,10 @@ export async function workspaceRoutes(app: FastifyInstance) {
   app.patch('/workspace', { preHandler: inWorkspace(MANAGERS) }, async (request) => {
     const ctx = requireTenant(request, MANAGERS)
     const input = updateWorkspaceSchema.parse(request.body)
+    // Requiring 2FA without having it would lock the admin out on the next click.
+    if (input.requireTwoFactor && !(request.authSession!.user as { twoFactorEnabled?: boolean }).twoFactorEnabled) {
+      throw new HttpError(409, 'two_factor_needed_first', 'Turn on two-factor login for yourself first')
+    }
     const tenant = await withTenant(ctx, async (tx) => {
       const [before] = await tx.select().from(tenants).where(eq(tenants.id, ctx.tenantId))
       const [after] = await tx

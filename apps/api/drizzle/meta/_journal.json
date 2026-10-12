@@ -134,6 +134,27 @@
       "when": 1791833582324,
       "tag": "0018_workspace_scoped_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791835344911,
+      "tag": "0019_security_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791835345754,
+      "tag": "0020_security_events_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791835374912,
+      "tag": "0021_two_factor",
+      "breakpoints": true
     }
   ]
 }

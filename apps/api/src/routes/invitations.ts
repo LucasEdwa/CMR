@@ -5,6 +5,7 @@ import { fromNodeHeaders } from 'better-auth/node'
 import { hashPassword } from 'better-auth/crypto'
 import { withClientIp } from './auth.js'
 import { assertPasswordNotBreached } from '../auth/breached.js'
+import { recordSecurityEvent } from '../auth/security-log.js'
 import { limit } from '../http/limits.js'
 import {
   acceptInvitationSchema,
@@ -219,6 +220,7 @@ export async function invitationRoutes(app: FastifyInstance) {
       })
       reply.header('set-cookie', signIn.headers.getSetCookie())
       userId = user.id
+      await recordSecurityEvent(request, user.id, 'login')
       const [created] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.token, signIn.response.token))
       sessionId = created?.id
     }
