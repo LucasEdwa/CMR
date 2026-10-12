@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -14,6 +14,7 @@ import { useActiveWorkspace } from '@/hooks/useMe'
 import { ApiRequestError } from '@/lib/api'
 import { daysSince, dealApi, picklistLabel, statusVariant, useDeal, useDealMutation, usePicklists, usePipelines } from '@/lib/deals'
 import { formatDuration } from '@/lib/duration'
+import { dataApi } from '@/lib/data'
 import { errorMessage } from '@/lib/errors'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -43,6 +44,12 @@ export function DealDetail() {
       },
       onError: (err) => toast.error(errorMessage(t, err)),
     })
+
+  // For "recently viewed" in the search palette.
+  const loaded = deal.isSuccess
+  useEffect(() => {
+    if (loaded) void dataApi.viewed({ type: 'deal', id })
+  }, [loaded, id])
 
   if (deal.isPending) return <Skeleton className="mx-auto h-96 max-w-4xl" />
   if (deal.error instanceof ApiRequestError && deal.error.status === 404) return <RecordNotFound backTo="/deals" />

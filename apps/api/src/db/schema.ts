@@ -8,12 +8,17 @@ import {
   DEAL_STATUSES,
   DEFAULT_STALE_DAYS,
   EMAIL_DIRECTIONS,
+  IMPORT_MODES,
+  IMPORT_OBJECTS,
+  IMPORT_STATUSES,
+  RECORD_TYPES,
   LIFECYCLE_STAGES,
   NOTIFICATION_TYPES,
   PICKLIST_KINDS,
   ROLES,
   SAVED_VIEW_OBJECTS,
   TASK_PRIORITIES,
+  type ImportError,
   type RichDoc,
 } from '@crm/shared'
 
@@ -606,4 +611,84 @@ export const notifications = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('notifications_user_idx').on(t.tenantId, t.userId, t.createdAt.desc())],
+)
+
+// ---------------------------------------------------------------------------
+// Imports and recently viewed records (Sprint 5)
+
+export const importObject = pgEnum('import_object', IMPORT_OBJECTS)
+export const importStatus = pgEnum('import_status', IMPORT_STATUSES)
+export const importMode = pgEnum('import_mode', IMPORT_MODES)
+export const recordType = pgEnum('record_type', RECORD_TYPES)
+
+export const imports = pgTable(
+  'imports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    object: importObject('object').notNull(),
+    fileName: text('file_name').notNull(),
+    mode: importMode('mode').notNull(),
+    status: importStatus('status').notNull().default('queued'),
+    header: jsonb('header').$type<string[]>().notNull(),
+    mapping: jsonb('mapping').$type<Array<string | null>>().notNull(),
+    // The uploaded file, kept only until the import has run.
+    source: text('source'),
+    total: integer('total').notNull().default(0),
+    processed: integer('processed').notNull().default(0),
+    created: integer('created').notNull().default(0),
+    updated: integer('updated').notNull().default(0),
+    skipped: integer('skipped').notNull().default(0),
+    failed: integer('failed').notNull().default(0),
+    // At most MAX_IMPORT_ERRORS rows, with their original values for the error report.
+    errors: jsonb('errors').$type<ImportError[]>().notNull().default([]),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    undoneAt: timestamp('undone_at', { withTimezone: true }),
+  },
+  (t) => [unique().on(t.tenantId, t.id), index('imports_tenant_created_idx').on(t.tenantId, t.createdAt.desc())],
+)
+
+// Every record an import created or changed, so the whole import can be undone.
+export const importRecords = pgTable(
+  'import_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    importId: uuid('import_id').notNull(),
+    recordType: recordType('record_type').notNull(),
+    recordId: uuid('record_id').notNull(),
+    // 'created', or 'updated' with the values the import overwrote.
+    action: text('action').notNull(),
+    before: jsonb('before').$type<Record<string, unknown>>(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.tenantId, t.importId], foreignColumns: [imports.tenantId, imports.id] }).onDelete('cascade'),
+    index('import_records_import_idx').on(t.tenantId, t.importId),
+  ],
+)
+
+// The last records each user opened, for the search palette. Only visible to that user.
+export const recentViews = pgTable(
+  'recent_views',
+  {
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    recordType: recordType('record_type').notNull(),
+    recordId: uuid('record_id').notNull(),
+    viewedAt: timestamp('viewed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.userId, t.recordType, t.recordId] }),
+    index('recent_views_user_idx').on(t.tenantId, t.userId, t.viewedAt.desc()),
+  ],
 )

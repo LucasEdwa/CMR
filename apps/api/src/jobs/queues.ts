@@ -9,6 +9,8 @@ export const QUEUES = {
   purgeRecord: 'records.purge',
   // Sends one task's reminder (email + notification) on the morning of its due date.
   taskReminder: 'tasks.reminder',
+  // Runs one CSV import (Sprint 5).
+  importRun: 'imports.run',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]

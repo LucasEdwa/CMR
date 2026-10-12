@@ -6,6 +6,9 @@ import {
   activities,
   activityLinks,
   auditLog,
+  importRecords,
+  imports,
+  recentViews,
   companies,
   contacts,
   deals,
@@ -69,6 +72,12 @@ beforeAll(async () => {
         await tx.insert(activityLinks).values({ tenantId: ctx.tenantId, activityId: activity!.id, dealId: deal!.id })
         await tx.insert(tasks).values({ tenantId: ctx.tenantId, title: 'Iso', dueDate: '2026-11-09', dueAt: new Date(), dealId: deal!.id })
         await tx.insert(notifications).values({ tenantId: ctx.tenantId, userId: ctx.userId, type: 'mention', data: { title: 'Iso' } })
+        const [imp] = await tx
+          .insert(imports)
+          .values({ tenantId: ctx.tenantId, object: 'contacts', fileName: 'iso.csv', mode: 'skip', header: [], mapping: [] })
+          .returning()
+        await tx.insert(importRecords).values({ tenantId: ctx.tenantId, importId: imp!.id, recordType: 'deal', recordId: deal!.id, action: 'created' })
+        await tx.insert(recentViews).values({ tenantId: ctx.tenantId, userId: ctx.userId, recordType: 'deal', recordId: deal!.id })
         await tx.insert(picklistItems).values({ tenantId: ctx.tenantId, kind: 'lost_reason', key: 'iso', position: 0 })
         await tx.insert(savedViews).values({
           tenantId: ctx.tenantId,
@@ -101,6 +110,8 @@ const tenantTables = [
   { name: 'activity_links', table: activityLinks },
   { name: 'tasks', table: tasks },
   { name: 'notifications', table: notifications },
+  { name: 'imports', table: imports },
+  { name: 'import_records', table: importRecords },
 ] as const
 
 describe.each(tenantTables)('$name isolation', ({ table }) => {
@@ -190,6 +201,22 @@ describe('notifications', () => {
     expect(await pgErrorOf(withTenant(A, (tx) => tx.update(notifications).set({ data: { title: 'changed' } }), db))).toMatch(
       /permission denied/,
     )
+  })
+})
+
+describe('recent_views', () => {
+  it('are only visible to the user who viewed the records', async () => {
+    const colleague = { ...A, userId: randomUUID(), role: 'member' as const }
+    await db.insert(users).values({ id: colleague.userId, email: `${colleague.userId}@test.local`, name: 'Colleague' })
+    await withTenant(A, (tx) => tx.insert(memberships).values({ tenantId: A.tenantId, userId: colleague.userId, role: 'member' }), db)
+    expect(await withTenant(A, (tx) => tx.select().from(recentViews), db)).toHaveLength(1)
+    expect(await withTenant(colleague, (tx) => tx.select().from(recentViews), db)).toHaveLength(0)
+    expect(await withTenant(B, (tx) => tx.select().from(recentViews).where(eq(recentViews.userId, A.userId)), db)).toHaveLength(0)
+    expect(
+      await pgErrorOf(
+        withTenant(colleague, (tx) => tx.insert(recentViews).values({ tenantId: A.tenantId, userId: A.userId, recordType: 'deal', recordId: randomUUID() }), db),
+      ),
+    ).toMatch(/row-level security/)
   })
 })
 

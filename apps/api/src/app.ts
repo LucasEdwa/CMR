@@ -18,6 +18,7 @@ import { companyRoutes } from './routes/companies.js'
 import { recordRoutes } from './routes/records.js'
 import { dealRoutes } from './routes/deals.js'
 import { activityRoutes } from './routes/activities.js'
+import { dataRoutes } from './routes/data.js'
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
@@ -66,6 +67,7 @@ export async function buildApp() {
       await api.register(recordRoutes)
       await api.register(dealRoutes)
       await api.register(activityRoutes)
+      await api.register(dataRoutes)
       if (env.APP_ENV !== 'production') await api.register(debugRoutes)
     },
     { prefix: '/api' },

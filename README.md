@@ -48,6 +48,14 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 - New queues go in `src/jobs/queues.ts`; job payloads always carry `tenantId` and `userId`. Run `pnpm db:migrate` after adding one: the migrate script creates the queues.
 - Task reminders: one `tasks.reminder` job per task and due date, at 08:00 in the assignee's timezone (their own, else the workspace's). The job re-checks the task before emailing, so moved, reassigned or completed tasks are skipped.
 
+## Import and export
+
+- CSV import (`/import`): the browser reads the file (UTF-8 or Windows-1252 from Excel), suggests a column mapping and previews the first rows with the same rules the import uses (`mapRow` in `packages/shared/src/data.ts`). The `imports.run` job then imports 250 rows per transaction, one savepoint per row, so a bad row is reported without stopping the rest.
+- Duplicates: contacts match on email, companies on org number (else domain), deals on name + company. Rows repeated within the file are skipped.
+- Every record an import creates or changes is listed in `import_records`; undo erases what it created and restores what it overwrote. The uploaded file is deleted once the import has run.
+- Export builds the CSV in the browser from `/<object>/export` (the list's filters, up to 50 000 rows): UTF-8 with BOM, semicolons, formula-looking cells prefixed with `'`.
+- Sample file with deliberate errors: `apps/web/public/samples/kontakter-500.csv` (491 good rows, 7 bad, 2 repeated).
+
 ## Auth
 
 - Better Auth handles signup, verification, login, sessions and password reset (`apps/api/src/auth/auth.ts`, mounted at `/api/auth/*`). Auth tables (`users`, `sessions`, `accounts`, `verifications`) are global; workspaces, memberships and invitations are tenant tables with RLS.

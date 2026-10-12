@@ -21,6 +21,7 @@ import { authApi } from '@/lib/auth'
 import { errorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import { NotificationBell } from './NotificationBell'
+import { SearchPalette } from './SearchPalette'
 
 const NAV = [
   { to: '/', key: 'nav.home', icon: Home, end: true, writersOnly: false },
@@ -76,7 +77,8 @@ function WorkspaceSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="max-w-56 justify-between gap-2" aria-label={t('nav.switchWorkspace')}>
+        {/* Shrinks (and truncates the name) so the top bar fits a 360 px phone. */}
+        <Button variant="ghost" className="max-w-56 min-w-0 shrink justify-between gap-2" aria-label={t('nav.switchWorkspace')}>
           <span className="truncate font-semibold">{workspace?.name}</span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-60" aria-hidden />
         </Button>
@@ -173,6 +175,7 @@ export function AppShell() {
           </Sheet>
           <WorkspaceSwitcher />
           <div className="ml-auto flex items-center gap-1">
+            <SearchPalette />
             <NotificationBell />
             <UserMenu />
           </div>

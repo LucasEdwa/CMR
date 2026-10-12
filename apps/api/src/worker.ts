@@ -6,6 +6,7 @@ import { deliver, useEmailQueue } from './email/send.js'
 import type { EmailMessage } from './email/templates.js'
 import { purgeRecord, usePurgeQueue, type PurgeJob } from './services/purge.js'
 import { sendTaskReminder, useReminderQueue, type ReminderJob } from './services/tasks.js'
+import { runImport, useImportQueue, type ImportJob } from './services/imports.js'
 
 // Runs inside the API process when RUN_WORKER=true. Split into its own service when load needs it.
 export async function startWorker() {
@@ -34,6 +35,12 @@ export async function startWorker() {
     await sendTaskReminder(tx, data)
   })
   useReminderQueue(boss)
+
+  // Imports manage their own transactions (one per chunk of rows), so they skip workTenant.
+  await boss.work<ImportJob>(QUEUES.importRun, async (jobs) => {
+    for (const job of jobs) await runImport(job.data)
+  })
+  useImportQueue(boss)
 
   return boss
 }

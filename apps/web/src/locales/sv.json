@@ -216,7 +216,10 @@
     "sharedBy": "Delad av {{name}}",
     "myViews": "Mina vyer",
     "sharedViews": "Delade vyer",
-    "updateView": "Spara ändringar i vyn"
+    "updateView": "Spara ändringar i vyn",
+    "selectRow": "Välj {{name}}",
+    "selectPage": "Välj alla på sidan",
+    "moreActions": "Fler åtgärder"
   },
   "contacts": {
     "title": "Kontakter",
@@ -592,5 +595,219 @@
     "mention": "{{actor}} nämnde dig på {{record}}",
     "assigned": "{{actor}} gav dig en uppgift",
     "reminder": "Påminnelse: ska göras idag"
+  },
+  "import": {
+    "button": "Importera från CSV",
+    "title": "Importera",
+    "intro": "Läs in kontakter, företag eller affärer från en CSV-fil, till exempel en export från Excel eller ett annat CRM.",
+    "step1": "1. Välj fil",
+    "step2_one": "2. Koppla kolumner ({{count}} rad i {{name}})",
+    "step2_other": "2. Koppla kolumner ({{count}} rader i {{name}})",
+    "step3": "3. Förhandsgranska och importera",
+    "what": "Vad vill du importera?",
+    "objects": {
+      "contacts": "Kontakter",
+      "companies": "Företag",
+      "deals": "Affärer"
+    },
+    "file": "CSV-fil",
+    "fileHint": "Första raden ska vara kolumnrubriker. Semikolon och komma fungerar, och filer sparade i Excel läses med å, ä och ö.",
+    "sample": "Ladda ner exempelfil (500 kontakter)",
+    "tooBig": "Filen är för stor (högst {{mb}} MB).",
+    "tooManyRows": "Filen har för många rader (högst {{max}}).",
+    "emptyFile": "Filen innehåller inga rader.",
+    "column": "Kolumn i filen",
+    "example": "Exempel",
+    "field": "Importera till",
+    "fieldFor": "Fält för kolumnen {{column}}",
+    "unnamed": "Kolumn {{n}}",
+    "skip": "Hoppa över",
+    "missing": "Koppla även: {{fields}}",
+    "fields": {
+      "firstName": "Förnamn",
+      "lastName": "Efternamn",
+      "fullName": "Fullständigt namn",
+      "email": "E-post",
+      "phone": "Telefon",
+      "mobilePhone": "Mobil",
+      "title": "Titel",
+      "company": "Företag",
+      "lifecycleStage": "Livscykelfas",
+      "leadSource": "Källa",
+      "street": "Gatuadress",
+      "postalCode": "Postnummer",
+      "city": "Ort",
+      "country": "Land",
+      "tags": "Taggar",
+      "owner": "Ägare (e-post eller namn)",
+      "name": "Namn",
+      "orgNumber": "Organisationsnummer",
+      "vatNumber": "Momsnummer",
+      "domain": "Webbplats",
+      "industry": "Bransch",
+      "size": "Storlek",
+      "value": "Värde",
+      "currency": "Valuta",
+      "pipeline": "Pipeline",
+      "stage": "Steg",
+      "status": "Status",
+      "expectedCloseDate": "Förväntat avslut",
+      "contactEmail": "Kontaktens e-post"
+    },
+    "previewLabel": "Förhandsgranskning av de första raderna",
+    "check": "Kontroll",
+    "rowOk": "Raden ser bra ut",
+    "existing": "Om posten redan finns",
+    "modes": {
+      "skip": "Hoppa över raden",
+      "update": "Uppdatera posten med värdena i filen"
+    },
+    "modeHints": {
+      "contacts": {
+        "skip": "Samma e-postadress räknas som samma kontakt.",
+        "update": "Tomma celler ändrar ingenting. Taggar läggs till."
+      },
+      "companies": {
+        "skip": "Samma organisationsnummer (annars webbplats) räknas som samma företag.",
+        "update": "Tomma celler ändrar ingenting."
+      },
+      "deals": {
+        "skip": "Samma namn på samma företag räknas som samma affär.",
+        "update": "Tomma celler ändrar ingenting."
+      }
+    },
+    "start_one": "Importera {{count}} rad",
+    "start_other": "Importera {{count}} rader",
+    "running": "Importerar {{name}}…",
+    "progress": "Importen pågår",
+    "processed": "{{done}} av {{total}} rader klara",
+    "statuses": {
+      "done": "Import klar: {{name}}",
+      "failed": "Importen avbröts: {{name}}",
+      "undone": "Importen är ångrad: {{name}}"
+    },
+    "summary": "Resultat",
+    "counts": {
+      "created": "Nya",
+      "updated": "Uppdaterade",
+      "skipped": "Hoppade över",
+      "failed": "Fel"
+    },
+    "errorsTitle_one": "{{count}} rad behöver åtgärdas",
+    "errorsTitle_other": "{{count}} rader behöver åtgärdas",
+    "downloadErrors": "Ladda ner felrapport",
+    "errorsFile": "fel",
+    "row": "Rad",
+    "problem": "Problem",
+    "values": "Värden",
+    "errors": {
+      "required": "{{field}} saknas",
+      "invalid": "Ogiltigt värde: {{field}}",
+      "not_found": "Hittades inte: {{field}}",
+      "exists": "Finns redan: {{field}}",
+      "duplicate_in_file": "Samma post finns tidigare i filen (hoppades över)",
+      "invalid_owner": "Ägaren är inte användare i företaget"
+    },
+    "open": {
+      "contacts": "Visa kontakter",
+      "companies": "Visa företag",
+      "deals": "Visa affärer"
+    },
+    "another": "Importera en fil till",
+    "undo": "Ångra import",
+    "undoTitle": "Ångra importen?",
+    "undoBody": "De {{created}} poster som importen skapade tas bort helt, även om de har ändrats sedan dess, och {{updated}} uppdaterade poster får tillbaka sina tidigare värden.",
+    "undone": "Importen är ångrad",
+    "history": "Tidigare importer",
+    "short": "{{created}} nya · {{failed}} fel",
+    "badges": {
+      "queued": "I kö",
+      "running": "Pågår",
+      "done": "Klar",
+      "failed": "Avbruten",
+      "undone": "Ångrad"
+    }
+  },
+  "export": {
+    "button": "Exportera till CSV",
+    "done_one": "{{count}} post exporterad",
+    "done_other": "{{count}} poster exporterade",
+    "truncated": "De första {{count}} av {{total}} poster exporterades"
+  },
+  "bulk": {
+    "label": "Åtgärder för valda",
+    "selected_one": "{{count}} vald",
+    "selected_other": "{{count}} valda",
+    "reassign": "Byt ägare…",
+    "setStage": "Ändra fas…",
+    "addTag": "Lägg till tagg",
+    "tagName": "Taggens namn",
+    "clear": "Avmarkera",
+    "confirmDelete_one": "Flytta {{count}} post till papperskorgen?",
+    "confirmDelete_other": "Flytta {{count}} poster till papperskorgen?",
+    "reassigned_one": "{{count}} post har fått ny ägare",
+    "reassigned_other": "{{count}} poster har fått ny ägare",
+    "updated_one": "{{count}} post uppdaterad",
+    "updated_other": "{{count}} poster uppdaterade",
+    "deleted_one": "{{count}} post borttagen",
+    "deleted_other": "{{count}} poster borttagna"
+  },
+  "search": {
+    "open": "Sök",
+    "title": "Sök i CRM",
+    "description": "Sök bland kontakter, företag och affärer",
+    "placeholder": "Sök kontakter, företag, affärer…",
+    "none": "Inga träffar för \"{{q}}\"",
+    "recent": "Senast visade",
+    "noRecent": "Poster du öppnar visas här.",
+    "groups": {
+      "contact": "Kontakter",
+      "company": "Företag",
+      "deal": "Affärer"
+    },
+    "types": {
+      "contact": "Kontakt",
+      "company": "Företag",
+      "deal": "Affär"
+    }
+  },
+  "duplicates": {
+    "title": "Dubbletter",
+    "intro": "Kontakter med samma namn eller telefonnummer. Slå ihop dem så hamnar allt på en kontakt.",
+    "noneTitle": "Inga dubbletter",
+    "noneBody": "Vi hittade inga kontakter med samma namn eller telefonnummer.",
+    "reasons": {
+      "name": "Samma namn",
+      "phone": "Samma telefonnummer"
+    },
+    "created": "skapad {{date}}",
+    "merge": "Slå ihop",
+    "mergeTitle": "Slå ihop kontakter",
+    "mergeBody": "Välj vilket värde som ska behållas för varje fält som skiljer sig.",
+    "keeping": "Behåller",
+    "swap": "Byt vilken som behålls",
+    "field": "Fält",
+    "keep": "Behålls",
+    "mergeIn": "Slås ihop",
+    "identical": "Alla fält är lika.",
+    "moves": "Affärer, aktiviteter, uppgifter och taggar från {{name}} flyttas över, och den kontakten tas bort.",
+    "mergeButton": "Slå ihop",
+    "merged": "Kontakterna är ihopslagna",
+    "fields": {
+      "firstName": "Förnamn",
+      "lastName": "Efternamn",
+      "email": "E-post",
+      "phone": "Telefon",
+      "mobilePhone": "Mobil",
+      "title": "Titel",
+      "companyId": "Företag",
+      "ownerUserId": "Ägare",
+      "lifecycleStage": "Livscykelfas",
+      "leadSource": "Källa",
+      "street": "Gatuadress",
+      "postalCode": "Postnummer",
+      "city": "Ort",
+      "country": "Land"
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { DetailList, RecordNotFound } from '@/components/records/DetailParts'
 import { useActiveWorkspace } from '@/hooks/useMe'
 import { ApiRequestError } from '@/lib/api'
 import { fullName, recordApi, useCompany, useContactList, useRecordMutation } from '@/lib/crm'
+import { dataApi } from '@/lib/data'
 import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { ContactForm } from '../contacts/ContactForm'
@@ -34,6 +35,12 @@ export function CompanyDetail() {
   const [deleting, setDeleting] = useState(false)
   const [addingContact, setAddingContact] = useState(false)
   const remove = useRecordMutation(() => recordApi.deleteCompany(id))
+
+  // For "recently viewed" in the search palette.
+  const loaded = company.isSuccess
+  useEffect(() => {
+    if (loaded) void dataApi.viewed({ type: 'company', id })
+  }, [loaded, id])
 
   if (company.isPending) return <Skeleton className="mx-auto h-96 max-w-4xl" />
   if (company.error instanceof ApiRequestError && company.error.status === 404) return <RecordNotFound backTo="/companies" />

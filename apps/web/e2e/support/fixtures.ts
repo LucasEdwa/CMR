@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from '@playwright/test'
+import { test as base, expect, type Browser, type Page } from '@playwright/test'
 import { randomInt, randomUUID } from 'node:crypto'
 
 export const SEED_PASSWORD = 'Password123!'
@@ -68,4 +68,21 @@ export async function apiPost<T = { id: string }>(page: Page, path: string, data
   const res = await page.request.post(`/api${path}`, { data, headers: { origin: BASE_ORIGIN } })
   expect(res.status(), await res.text()).toBe(201)
   return (await res.json()) as T
+}
+
+// Invites a colleague into the owner's company and returns a logged-in page for them.
+export async function colleague(owner: Page, browser: Browser, name: string, role = 'member') {
+  const email = uniqueEmail(name.toLowerCase())
+  await apiPost(owner, '/workspace/invitations', { email, role })
+  const { linkFromEmail } = await import('./mailpit.ts')
+  const token = (await linkFromEmail(email, '/invite/')).split('/invite/')[1]!
+  const context = await browser.newContext({ locale: 'sv-SE', timezoneId: 'Europe/Stockholm', extraHTTPHeaders: { 'x-forwarded-for': randomIp() } })
+  const page = await context.newPage()
+  const res = await page.request.post(`${BASE_ORIGIN}/api/invitations/${token}/accept`, {
+    data: { name, password: 'Secret123!' },
+    headers: { origin: BASE_ORIGIN },
+  })
+  expect(res.status(), await res.text()).toBe(200)
+  const id = ((await (await page.request.get(`${BASE_ORIGIN}/api/me`)).json()) as { user: { id: string } }).user.id
+  return { page, email, id, close: () => context.close() }
 }

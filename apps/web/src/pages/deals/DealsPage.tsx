@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { NativeSelect } from '@/components/NativeSelect'
 import { DataTable, type Column } from '@/components/records/DataTable'
+import { BulkBar } from '@/components/data/BulkBar'
+import { ListActions, type ExportColumn } from '@/components/data/ListActions'
+import { useSelection } from '@/hooks/useSelection'
 import { EmptyState } from '@/components/records/EmptyState'
 import { Pagination } from '@/components/records/Pagination'
 import { useActiveWorkspace } from '@/hooks/useMe'
@@ -33,6 +36,25 @@ export function DealsPage() {
   const view = params.get('view') === 'list' ? 'list' : 'board'
   const board = useBoard(view === 'board' ? pipelineId : undefined)
   const [creating, setCreating] = useState<{ stageId?: string } | null>(null)
+
+  // Export: the list view's filters, or the board's open deals.
+  const exportParams = new URLSearchParams(params)
+  for (const key of ['view', 'pipeline', 'cols', 'page', 'pageSize']) exportParams.delete(key)
+  if (pipelineId) exportParams.set('pipelineId', pipelineId)
+  if (view === 'board') exportParams.set('status', 'open')
+  const exportColumns: ExportColumn<Deal>[] = [
+    { header: t('deals.name'), value: (d) => d.name },
+    { header: t('deals.value'), value: (d) => (d.value / 100).toFixed(2).replace('.', ',') },
+    { header: t('import.fields.currency'), value: (d) => d.currency },
+    { header: t('deals.pipeline'), value: (d) => d.pipeline.name },
+    { header: t('deals.stage'), value: (d) => d.stage.name },
+    { header: t('deals.status'), value: (d) => t(`deals.statuses.${d.status}`) },
+    { header: t('deals.company'), value: (d) => d.company?.name },
+    { header: t('import.fields.contactEmail'), value: (d) => d.contacts.map((c) => c.name).join(', ') },
+    { header: t('deals.expectedClose'), value: (d) => d.expectedCloseDate },
+    { header: t('list.owner'), value: (d) => d.owner?.name },
+    { header: t('contacts.created'), value: (d) => d.createdAt.slice(0, 10) },
+  ]
 
   return (
     <div className="mx-auto grid grid-cols-1 max-w-[100rem] gap-4">
@@ -61,6 +83,7 @@ export function DealsPage() {
               {t('deals.list')}
             </Button>
           </div>
+          <ListActions object="deals" params={exportParams} columns={exportColumns} />
           {canWrite && (
             <Button onClick={() => setCreating({})}>
               <Plus className="size-4" aria-hidden />
@@ -113,6 +136,7 @@ function DealList({
   if (pipelineId) apiParams.set('pipelineId', pipelineId)
   if (q) apiParams.set('q', q)
   const list = useDealList(apiParams, !!pipelineId)
+  const selection = useSelection()
   const sort = params.get('sort') ?? 'updatedAt'
   const dir = (params.get('dir') ?? 'desc') as 'asc' | 'desc'
 
@@ -127,7 +151,7 @@ function DealList({
   ]
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-48 flex-1">
           <Search className="text-muted-foreground pointer-events-none absolute top-2.5 left-2.5 size-4" aria-hidden />
@@ -159,8 +183,10 @@ function DealList({
         <EmptyState icon={Handshake} title={t('list.emptyTitle')} body={t('deals.emptyBody')} action={canWrite ? <Button onClick={onCreate}>{t('deals.new')}</Button> : undefined} />
       ) : (
         <>
+          {selection.ids.length > 0 && <BulkBar object="deals" ids={selection.ids} onDone={selection.clear} />}
           <DataTable
             rows={list.data.items}
+            selection={canWrite ? { ...selection, label: (d) => d.name } : undefined}
             columns={columns}
             rowKey={(d) => d.id}
             rowHref={(d) => `/deals/${d.id}`}
