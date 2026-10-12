@@ -174,10 +174,12 @@ test('a saved view survives a reload and is visible to colleagues only when shar
   await page.request.delete(`/api/saved-views/${view.id}`, { headers: { origin: 'http://localhost:5173' } })
 })
 
-test('contact and company lists have no horizontal scroll on a phone', async ({ page }) => {
+test('lists, detail pages and the board have no horizontal page scroll on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 })
   await loginAs(page, users.anna.email)
-  for (const path of ['/contacts', '/companies']) {
+  const deals = await (await page.request.get('/api/deals?status=open&pageSize=25')).json()
+  const contacts = await (await page.request.get('/api/contacts?pageSize=25')).json()
+  for (const path of ['/contacts', '/companies', '/deals', `/deals/${deals.items[0].id}`, `/contacts/${contacts.items[0].id}`, '/settings/pipelines']) {
     await page.goto(path)
     await page.waitForLoadState('networkidle')
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
