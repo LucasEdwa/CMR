@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { createHash, randomBytes } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 import { fromNodeHeaders } from 'better-auth/node'
+import { withClientIp } from './auth.js'
 import {
   acceptInvitationSchema,
   inviteSchema,
@@ -213,7 +214,7 @@ export async function invitationRoutes(app: FastifyInstance) {
       })
       const signIn = await auth.api.signInEmail({
         body: { email: invitation.email, password: input.password },
-        headers: fromNodeHeaders(request.headers),
+        headers: withClientIp(fromNodeHeaders(request.headers), request.ip),
         returnHeaders: true,
       })
       reply.header('set-cookie', signIn.headers.getSetCookie())

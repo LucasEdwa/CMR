@@ -1,7 +1,7 @@
 import type { FastifyError, FastifyInstance } from 'fastify'
 import { ZodError } from 'zod'
 import type { ApiError } from '@crm/shared'
-import { isRlsViolation } from './db/errors.js'
+import { isRlsViolation, scrubError } from './db/errors.js'
 
 export class HttpError extends Error {
   constructor(
@@ -38,7 +38,7 @@ export function registerErrorHandlers(app: FastifyInstance) {
     if (statusCode < 500) {
       return reply.status(statusCode).send(body('bad_request', err.message))
     }
-    request.log.error(err)
+    request.log.error({ err: scrubError(err) }, 'request failed')
     return reply.status(500).send(body('internal_error', 'Something went wrong'))
   })
 }

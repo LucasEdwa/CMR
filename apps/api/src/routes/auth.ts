@@ -5,6 +5,13 @@ import { env } from '../env.js'
 import { clearFailures, isLockedOut, recordFailure } from '../auth/login-failures.js'
 import { HttpError } from '../errors.js'
 
+// Better Auth's own rate limits read X-Forwarded-For. Hand it the IP Fastify resolved through
+// the trusted proxies, never the raw header a client could write itself.
+export function withClientIp(headers: Headers, ip: string) {
+  headers.set('x-forwarded-for', ip)
+  return headers
+}
+
 // Mounts Better Auth (signup, login, logout, verification, password reset) under /api/auth/*.
 export async function authRoutes(app: FastifyInstance) {
   app.route({
@@ -21,7 +28,7 @@ export async function authRoutes(app: FastifyInstance) {
       const response = await auth.handler(
         new Request(url, {
           method: request.method,
-          headers: fromNodeHeaders(request.headers),
+          headers: withClientIp(fromNodeHeaders(request.headers), request.ip),
           body: request.body === undefined ? undefined : JSON.stringify(request.body),
         }),
       )

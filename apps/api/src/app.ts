@@ -3,7 +3,7 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import * as Sentry from '@sentry/node'
-import { env } from './env.js'
+import { env, trustProxySetting } from './env.js'
 import { HttpError, registerErrorHandlers } from './errors.js'
 import { authContext } from './auth/context.js'
 import { authRoutes } from './routes/auth.js'
@@ -33,12 +33,16 @@ export async function buildApp() {
     logger:
       env.APP_ENV === 'test'
         ? false
-        : env.APP_ENV === 'development'
-          ? { transport: { target: 'pino-pretty' } }
-          : true,
+        : {
+            ...(env.APP_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
+            // Query strings carry search terms, names and emails: log the path only.
+            serializers: {
+              req: (req: { method: string; url: string; id: string }) => ({ id: req.id, method: req.method, path: req.url.split('?')[0] }),
+            },
+          },
     genReqId: () => crypto.randomUUID(),
-    // Behind Railway/Vercel the client IP comes from x-forwarded-for (rate limits use it).
-    trustProxy: true,
+    // Behind Railway/Vercel the client IP comes from X-Forwarded-For, set by trusted proxies only.
+    trustProxy: trustProxySetting(),
   })
 
   // Every route, for the permission-matrix test (which fails when a route has no rule).
@@ -61,6 +65,12 @@ export async function buildApp() {
     if (SAFE_METHODS.has(request.method) || request.url.startsWith('/api/auth/')) return
     const origin = request.headers.origin
     if (origin && origin !== env.WEB_ORIGIN) throw new HttpError(403, 'invalid_origin', 'Request origin not allowed')
+  })
+
+  // API responses are one user's view of one workspace: never cache them in browsers or proxies
+  // (the web app reaches the API through a Vercel rewrite).
+  app.addHook('onSend', async (request, reply) => {
+    if (request.url.startsWith('/api/')) reply.header('cache-control', 'no-store')
   })
 
   // The API lives under /api; the root only points people to the web app.

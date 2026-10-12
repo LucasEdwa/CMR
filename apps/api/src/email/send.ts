@@ -25,7 +25,16 @@ export async function sendEmail(message: EmailMessage) {
     return
   }
   if (env.EMAIL_DELIVERY === 'queue' && boss) {
-    await boss.send(QUEUES.email, message, { retryLimit: 5, retryDelay: 30, retryBackoff: true })
+    await boss.send(QUEUES.email, message, {
+      retryLimit: 5,
+      retryDelay: 30,
+      retryBackoff: true,
+      // The job holds the whole email, including login, reset and invitation links. Remove it soon
+      // after sending (and drop it after a day if it never goes out), so the database never keeps
+      // usable links around: invitation tokens are otherwise stored only as hashes.
+      deleteAfterSeconds: 60,
+      retentionSeconds: 24 * 60 * 60,
+    })
     return
   }
   await deliver(message)

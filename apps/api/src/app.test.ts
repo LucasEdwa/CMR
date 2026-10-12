@@ -22,6 +22,13 @@ describe('API', () => {
     expect(res.json()).toMatchObject({ health: '/api/health' })
   })
 
+  it('marks every API response as not cacheable', async () => {
+    for (const url of ['/api/health', '/api/me', '/api/nope']) {
+      const res = await app.inject({ method: 'GET', url })
+      expect(res.headers['cache-control'], url).toBe('no-store')
+    }
+  })
+
   it('unknown routes return the standard error shape', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/nope' })
     expect(res.statusCode).toBe(404)
