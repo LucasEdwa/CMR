@@ -1,5 +1,6 @@
 // Loaded with --import before anything else so Sentry can instrument Fastify and Postgres.
 import * as Sentry from '@sentry/node'
+import { redactUrl } from '@crm/shared'
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -13,6 +14,14 @@ if (process.env.SENTRY_DSN) {
     beforeSend(event) {
       for (const ex of event.exception?.values ?? []) if (ex.value) ex.value = ex.value.replace(/\nparams:[\s\S]*$/, '\nparams: [redacted]')
       if (event.message) event.message = event.message.replace(/\nparams:[\s\S]*$/, '\nparams: [redacted]')
+      // Query strings and invitation paths carry search terms and link secrets.
+      if (event.request?.url) event.request.url = redactUrl(event.request.url)
+      if (event.request) delete event.request.query_string
+      return event
+    },
+    beforeSendTransaction(event) {
+      if (event.request?.url) event.request.url = redactUrl(event.request.url)
+      if (event.request) delete event.request.query_string
       return event
     },
   })

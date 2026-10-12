@@ -3,6 +3,7 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import * as Sentry from '@sentry/node'
+import { redactUrl } from '@crm/shared'
 import { env, trustProxySetting } from './env.js'
 import { HttpError, registerErrorHandlers } from './errors.js'
 import { authContext } from './auth/context.js'
@@ -46,9 +47,10 @@ export async function buildApp() {
         ? false
         : {
             ...(env.APP_ENV === 'development' ? { transport: { target: 'pino-pretty' } } : {}),
-            // Query strings carry search terms, names and emails: log the path only.
+            // Query strings carry search terms, names and emails, and invitation paths carry the
+            // link secret: log the redacted path only.
             serializers: {
-              req: (req: { method: string; url: string; id: string }) => ({ id: req.id, method: req.method, path: req.url.split('?')[0] }),
+              req: (req: { method: string; url: string; id: string }) => ({ id: req.id, method: req.method, path: redactUrl(req.url) }),
             },
           },
     genReqId: () => crypto.randomUUID(),
