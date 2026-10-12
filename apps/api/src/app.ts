@@ -13,6 +13,9 @@ import { meRoutes } from './routes/me.js'
 import { workspaceRoutes } from './routes/workspaces.js'
 import { memberRoutes } from './routes/members.js'
 import { invitationRoutes } from './routes/invitations.js'
+import { contactRoutes } from './routes/contacts.js'
+import { companyRoutes } from './routes/companies.js'
+import { recordRoutes } from './routes/records.js'
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
@@ -56,6 +59,9 @@ export async function buildApp() {
       await api.register(workspaceRoutes)
       await api.register(memberRoutes)
       await api.register(invitationRoutes)
+      await api.register(contactRoutes)
+      await api.register(companyRoutes)
+      await api.register(recordRoutes)
       if (env.APP_ENV !== 'production') await api.register(debugRoutes)
     },
     { prefix: '/api' },
