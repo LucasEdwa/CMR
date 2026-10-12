@@ -6,6 +6,8 @@ export const LOCALES = ['sv', 'en'] as const
 export const localeSchema = z.enum(LOCALES)
 export type Locale = z.infer<typeof localeSchema>
 
+export const isTimezone = (tz: string) => tz === 'UTC' || Intl.supportedValuesOf('timeZone').includes(tz)
+
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email())
 export const passwordSchema = z.string().min(8).max(128)
 
@@ -48,10 +50,7 @@ export const updateWorkspaceSchema = z.object({
   name: z.string().trim().min(2).max(100).optional(),
   orgNumber: orgNumberSchema.optional(),
   currency: z.enum(CURRENCIES).optional(),
-  timezone: z
-    .string()
-    .refine((tz) => Intl.supportedValuesOf('timeZone').includes(tz) || tz === 'UTC', 'invalid_timezone')
-    .optional(),
+  timezone: z.string().refine(isTimezone, 'invalid_timezone').optional(),
   dateFormat: z.enum(DATE_FORMATS).optional(),
 })
 export type UpdateWorkspaceInput = z.input<typeof updateWorkspaceSchema>
@@ -68,7 +67,14 @@ export const workspaceSchema = z.object({
 export type Workspace = z.infer<typeof workspaceSchema>
 
 export const meSchema = z.object({
-  user: z.object({ id: z.uuid(), name: z.string(), email: z.string(), locale: localeSchema }),
+  user: z.object({
+    id: z.uuid(),
+    name: z.string(),
+    email: z.string(),
+    locale: localeSchema,
+    // Null means "use the workspace timezone".
+    timezone: z.string().nullable(),
+  }),
   workspaces: z.array(z.object({ id: z.uuid(), name: z.string(), slug: z.string(), role: roleSchema })),
   activeWorkspaceId: z.uuid().nullable(),
 })
@@ -77,6 +83,7 @@ export type Me = z.infer<typeof meSchema>
 export const updateMeSchema = z.object({
   name: z.string().trim().min(1).max(100).optional(),
   locale: localeSchema.optional(),
+  timezone: z.string().refine(isTimezone, 'invalid_timezone').nullable().optional(),
 })
 
 export const inviteSchema = z.object({
