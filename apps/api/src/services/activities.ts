@@ -2,9 +2,11 @@ import { and, desc, eq, inArray, isNull, sql, type SQL } from 'drizzle-orm'
 import type { z } from 'zod'
 import {
   mentionedUserIds,
+  relabelMentions,
   richTextToPlain,
   type Activity,
   type RecordRef,
+  type RichDoc,
   type Timeline,
   type createActivitySchema,
   type timelineQuerySchema,
@@ -12,7 +14,7 @@ import {
 } from '@crm/shared'
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
-import { activities, activityLinks, companies, contacts, dealContacts, deals, users } from '../db/schema.js'
+import { activities, activityLinks, companies, contacts, dealContacts, deals, memberships, users } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { HttpError } from '../errors.js'
 import { MANAGERS } from '../auth/context.js'
@@ -179,10 +181,20 @@ async function notifyMentions(tx: Tx, ctx: TenantContext, activity: ActivityRow,
   })
 }
 
+// Mention labels come from the member list, not from the browser.
+async function withMemberLabels(tx: Tx, body: RichDoc): Promise<RichDoc> {
+  const ids = mentionedUserIds(body)
+  const members = ids.length
+    ? await tx.select({ id: users.id, name: users.name }).from(memberships).innerJoin(users, eq(users.id, memberships.userId)).where(inArray(memberships.userId, ids))
+    : []
+  return relabelMentions(body, new Map(members.map((m) => [m.id, m.name])))
+}
+
 const auditable = (a: ActivityRow) => ({ ...a, body: undefined, bodyText: a.bodyText.slice(0, 200) })
 
 export async function createActivity(tx: Tx, ctx: TenantContext, input: z.output<typeof createActivitySchema>) {
-  const { record, body, occurredAt, ...fields } = input
+  const { record, body: sent, occurredAt, ...fields } = input
+  const body = sent ? await withMemberLabels(tx, sent) : sent
   await requireRecord(tx, record)
   const links = await linkTargets(tx, record)
   const now = new Date()
@@ -221,7 +233,8 @@ async function editableActivity(tx: Tx, ctx: TenantContext, id: string) {
 
 export async function updateActivity(tx: Tx, ctx: TenantContext, id: string, input: z.output<typeof updateActivitySchema>) {
   const before = await editableActivity(tx, ctx, id)
-  const { body, occurredAt, ...fields } = input
+  const { body: sent, occurredAt, ...fields } = input
+  const body = sent ? await withMemberLabels(tx, sent) : sent
   const next = {
     ...fields,
     ...(body !== undefined ? { body, bodyText: richTextToPlain(body) } : {}),

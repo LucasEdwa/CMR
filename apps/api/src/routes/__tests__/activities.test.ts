@@ -182,7 +182,8 @@ describe('@mentions', () => {
               type: 'paragraph',
               content: [
                 { type: 'text', text: 'Kan du ringa, ' },
-                { type: 'mention', attrs: { id: erik.userId, label: 'Erik' } },
+                // The browser's label is not trusted: the server uses the member's name.
+                { type: 'mention', attrs: { id: erik.userId, label: 'Vd:n' } },
                 { type: 'mention', attrs: { id: ownerId, label: 'Olga' } },
                 { type: 'mention', attrs: { id: outsiderId, label: 'Utomstående' } },
               ],
@@ -198,13 +199,19 @@ describe('@mentions', () => {
     expect(inbox.items[0]).toMatchObject({
       type: 'mention',
       actor: 'Olga Owner',
-      title: 'Kan du ringa, @Erik@Olga@Utomstående',
+      title: 'Kan du ringa, @Erik@Olga Owner@Utomstående',
       record: { type: 'deal', id: deal.id, name: 'Licenser' },
       activityId: created.id,
       readAt: null,
     })
     // The author is not notified about mentioning themselves.
     expect((await expectStatus(owner.get('/api/notifications'), 200)).items).toEqual([])
+    // Someone outside the workspace is not a mention, only text.
+    expect(created.body.content[0].content.slice(1)).toEqual([
+      { type: 'mention', attrs: { id: erik.userId, label: 'Erik' } },
+      { type: 'mention', attrs: { id: ownerId, label: 'Olga Owner' } },
+      { type: 'text', text: '@Utomstående' },
+    ])
 
     // Editing the note keeps Erik's mention: no second notification.
     await expectStatus(owner.patch(`/api/activities/${created.id}`, { body: mention('Påminnelse', { id: erik.userId, label: 'Erik' }) }), 200)

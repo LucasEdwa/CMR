@@ -95,6 +95,20 @@ export function mentionedUserIds(doc: RichDoc | null | undefined): string[] {
   return [...ids]
 }
 
+// Mentions as the server stores them: the label is the member's current name (never what the
+// browser sent), and a mention of someone outside the workspace becomes plain text.
+export function relabelMentions(doc: RichDoc, names: ReadonlyMap<string, string>): RichDoc {
+  const map = (nodes: RichNode[]): RichNode[] =>
+    nodes.map((n): RichNode => {
+      if (n.type === 'mention') {
+        const name = names.get(n.attrs.id)
+        return name ? { ...n, attrs: { ...n.attrs, label: name } } : { type: 'text', text: `@${n.attrs.label}` }
+      }
+      return 'content' in n && n.content ? ({ ...n, content: map(n.content) } as RichNode) : n
+    })
+  return { ...doc, content: map(doc.content) }
+}
+
 export const plainToRichDoc = (text: string): RichDoc => ({
   type: 'doc',
   content: text
