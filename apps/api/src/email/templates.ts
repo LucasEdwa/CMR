@@ -54,6 +54,29 @@ const invitation: Template<{ inviter: string; workspace: string; role: Role }> =
   }),
 }
 
+const taskReminder: Template<{ name: string; title: string; time: string | null; record: string | null }> = {
+  sv: ({ name, title, time, record }) => ({
+    subject: `Påminnelse: ${title}`,
+    lines: [
+      `Hej ${name}!`,
+      time ? `Uppgiften "${title}" ska vara klar idag kl. ${time}.` : `Uppgiften "${title}" ska vara klar idag.`,
+      ...(record ? [`Gäller: ${record}`] : []),
+    ],
+    button: 'Visa mina uppgifter',
+    footer: 'Du får det här mejlet eftersom uppgiften är tilldelad dig.',
+  }),
+  en: ({ name, title, time, record }) => ({
+    subject: `Reminder: ${title}`,
+    lines: [
+      `Hi ${name},`,
+      time ? `The task "${title}" is due today at ${time}.` : `The task "${title}" is due today.`,
+      ...(record ? [`Related to: ${record}`] : []),
+    ],
+    button: 'View my tasks',
+    footer: 'You are receiving this email because the task is assigned to you.',
+  }),
+}
+
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
@@ -74,4 +97,9 @@ export const emails = {
     render(resetPassword, locale, p, to, p.url),
   invitation: (to: string, locale: Locale, p: { inviter: string; workspace: string; role: Role; url: string }) =>
     render(invitation, locale, p, to, p.url),
+  taskReminder: (
+    to: string,
+    locale: Locale,
+    p: { name: string; title: string; time: string | null; record: string | null; url: string },
+  ) => render(taskReminder, locale, p, to, p.url),
 }
