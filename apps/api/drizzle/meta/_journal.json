@@ -127,6 +127,13 @@
       "when": 1791831961299,
       "tag": "0017_role_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791833582324,
+      "tag": "0018_workspace_scoped_visibility",
+      "breakpoints": true
     }
   ]
 }

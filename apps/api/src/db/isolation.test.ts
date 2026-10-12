@@ -260,6 +260,17 @@ describe('tenants', () => {
     expect(updated).toHaveLength(0)
   })
 
+  it('inside a workspace, shows only that workspace, even to a user who is in several', async () => {
+    const C = await createTenantWithUser('owner', db)
+    await withTenant(C, (tx) => tx.insert(memberships).values({ tenantId: C.tenantId, userId: B.userId, role: 'member' }), db)
+    const inB = await withTenant(B, (tx) => tx.select().from(memberships).where(eq(memberships.userId, B.userId)), db)
+    expect(inB.map((m) => m.tenantId)).toEqual([B.tenantId])
+    expect((await withTenant(B, (tx) => tx.select({ id: tenants.id }).from(tenants), db)).map((t) => t.id)).toEqual([B.tenantId])
+    // Without a workspace (login, switcher) the user sees all of their own memberships.
+    const all = await withUser(B.userId, (tx) => tx.select().from(memberships), db)
+    expect(all.map((m) => m.tenantId).sort()).toEqual([B.tenantId, C.tenantId].sort())
+  })
+
   it('lets a user list only the workspaces they are a member of (workspace switcher)', async () => {
     // Make A's user a member of a second tenant C.
     const C = await createTenantWithUser('owner', db)

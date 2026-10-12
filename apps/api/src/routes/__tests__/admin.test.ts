@@ -147,6 +147,21 @@ describe('audit log', () => {
   })
 })
 
+describe('people in several workspaces', () => {
+  it('see, change and leave only the active workspace', async () => {
+    const { owner, ws: first } = await setup('Första AB')
+    const second = await createWorkspace(owner, 'Andra AB')
+    const members = await ok(owner.get('/api/workspace/members'))
+    expect(members).toHaveLength(1)
+    // The last owner of the active workspace cannot leave it; the other workspace is not involved.
+    const me = (await owner.get('/api/me')).json()
+    expect(me.activeWorkspaceId).toBe(second.id)
+    expect((await owner.delete(`/api/workspace/members/${me.user.id}`)).statusCode).toBe(409)
+    await ok(owner.post('/api/workspaces/switch', { workspaceId: first.id }))
+    expect(await ok(owner.get('/api/workspace/members'))).toHaveLength(1)
+  })
+})
+
 describe('deleting the workspace', () => {
   it('needs the owner and the workspace name, then erases it', async () => {
     const { owner, ws } = await setup('Raderas AB')
