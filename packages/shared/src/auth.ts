@@ -52,6 +52,7 @@ export const updateWorkspaceSchema = z.object({
   currency: z.enum(CURRENCIES).optional(),
   timezone: z.string().refine(isTimezone, 'invalid_timezone').optional(),
   dateFormat: z.enum(DATE_FORMATS).optional(),
+  ownRecordsOnly: z.boolean().optional(),
 })
 export type UpdateWorkspaceInput = z.input<typeof updateWorkspaceSchema>
 
@@ -63,6 +64,7 @@ export const workspaceSchema = z.object({
   currency: z.enum(CURRENCIES),
   timezone: z.string(),
   dateFormat: z.enum(DATE_FORMATS),
+  ownRecordsOnly: z.boolean(),
 })
 export type Workspace = z.infer<typeof workspaceSchema>
 
@@ -127,3 +129,8 @@ export const acceptInvitationSchema = z.object({
 })
 
 export const updateMemberSchema = z.object({ role: roleSchema })
+
+export const deleteWorkspaceSchema = z.object({
+  // The workspace name, typed again to confirm.
+  confirm: z.string().trim().min(1),
+})
