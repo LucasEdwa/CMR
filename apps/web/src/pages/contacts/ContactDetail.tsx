@@ -15,6 +15,8 @@ import { fullName, recordApi, useContact, useRecordMutation } from '@/lib/crm'
 import { errorMessage } from '@/lib/errors'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { ContactForm } from './ContactForm'
+import { Timeline } from '@/components/activities/Timeline'
+import { RecordTasks } from '@/components/tasks/RecordTasks'
 import { RelatedDeals } from '../deals/RelatedDeals'
 import { picklistLabel, usePicklists } from '@/lib/deals'
 
@@ -75,6 +77,7 @@ export function ContactDetail() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_18rem]">
+        <div className="grid min-w-0 content-start gap-6">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -108,8 +111,11 @@ export function ContactDetail() {
             />
           </CardContent>
         </Card>
+        <Timeline record={{ type: 'contact', id: c.id }} />
+        </div>
 
         <div className="grid min-w-0 content-start gap-6">
+        <RecordTasks record={{ type: 'contact', id: c.id, name }} />
         <Card>
           <CardHeader>
             <CardTitle>

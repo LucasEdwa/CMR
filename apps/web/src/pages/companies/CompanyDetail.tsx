@@ -16,6 +16,8 @@ import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { ContactForm } from '../contacts/ContactForm'
 import { CompanyForm } from './CompanyForm'
+import { Timeline } from '@/components/activities/Timeline'
+import { RecordTasks } from '@/components/tasks/RecordTasks'
 import { RelatedDeals } from '../deals/RelatedDeals'
 import { picklistLabel, usePicklists } from '@/lib/deals'
 
@@ -76,6 +78,7 @@ export function CompanyDetail() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_20rem]">
+        <div className="grid min-w-0 content-start gap-6">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -98,8 +101,11 @@ export function CompanyDetail() {
             />
           </CardContent>
         </Card>
+        <Timeline record={{ type: 'company', id: c.id }} />
+        </div>
 
         <div className="grid min-w-0 content-start gap-6">
+        <RecordTasks record={{ type: 'company', id: c.id, name: c.name }} />
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>

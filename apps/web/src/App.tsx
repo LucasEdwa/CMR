@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { Home } from '@/pages/Home'
+import { TasksPage } from '@/pages/tasks/TasksPage'
 import { TrashPage } from '@/pages/TrashPage'
 import { ContactsPage } from '@/pages/contacts/ContactsPage'
 import { ContactDetail } from '@/pages/contacts/ContactDetail'
@@ -50,6 +51,7 @@ const router = createBrowserRouter([
           { path: '/companies/:id', element: <CompanyDetail /> },
           { path: '/deals', element: <DealsPage /> },
           { path: '/deals/:id', element: <DealDetail /> },
+          { path: '/tasks', element: <TasksPage /> },
           { path: '/trash', element: <TrashPage /> },
           {
             path: '/settings',

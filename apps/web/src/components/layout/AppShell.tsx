@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Building2, Check, ChevronsUpDown, Handshake, Home, LogOut, Menu, Plus, Settings, Trash2, Users } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, Handshake, Home, ListTodo, LogOut, Menu, Plus, Settings, Trash2, Users } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -20,9 +20,11 @@ import { send } from '@/lib/api'
 import { authApi } from '@/lib/auth'
 import { errorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
+import { NotificationBell } from './NotificationBell'
 
 const NAV = [
   { to: '/', key: 'nav.home', icon: Home, end: true, writersOnly: false },
+  { to: '/tasks', key: 'nav.tasks', icon: ListTodo, end: false, writersOnly: false },
   { to: '/contacts', key: 'nav.contacts', icon: Users, end: false, writersOnly: false },
   { to: '/companies', key: 'nav.companies', icon: Building2, end: false, writersOnly: false },
   { to: '/deals', key: 'nav.deals', icon: Handshake, end: false, writersOnly: false },
@@ -170,7 +172,8 @@ export function AppShell() {
             </SheetContent>
           </Sheet>
           <WorkspaceSwitcher />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
             <UserMenu />
           </div>
         </header>

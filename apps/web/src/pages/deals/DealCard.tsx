@@ -1,10 +1,10 @@
 import { forwardRef, type HTMLAttributes } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CalendarClock, Hourglass } from 'lucide-react'
+import { CalendarClock, Hourglass, ListTodo } from 'lucide-react'
 import { formatMoney, type Deal } from '@crm/shared'
 import { Badge } from '@/components/ui/badge'
 import { daysSince } from '@/lib/deals'
-import { formatDate } from '@/lib/format'
+import { formatDate, formatDueDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const initials = (name: string) =>
@@ -39,6 +39,20 @@ export const DealCard = forwardRef<HTMLDivElement, Props>(({ deal, dragging, cla
             {initials(deal.owner.name)}
           </span>
         )}
+      </div>
+      {/* The next open task, or a nudge that the deal has none planned. */}
+      <div
+        className={cn(
+          'flex items-center gap-1 text-xs',
+          deal.nextTask?.overdue ? 'text-destructive font-medium' : deal.nextTask ? 'text-foreground' : 'text-muted-foreground italic',
+        )}
+      >
+        <ListTodo className="size-3.5 shrink-0" aria-hidden />
+        {deal.nextTask
+          ? t(deal.nextTask.overdue ? 'deals.nextTaskOverdue' : 'deals.nextTask', {
+              date: formatDueDate(deal.nextTask.dueDate, deal.nextTask.dueTime, i18n.language),
+            })
+          : t('deals.noNextTask')}
       </div>
       {(deal.expectedCloseDate || deal.stale) && (
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
