@@ -14,7 +14,8 @@ export type SeedUser = {
   role: Role
 }
 
-// Passwords (Password123!) are set once auth lands in Sprint 1.
+// Every seed user logs in with SEED_PASSWORD (dev and staging only).
+export const SEED_PASSWORD = 'Password123!'
 export const SEED_USERS: SeedUser[] = [
   { id: '00000000-0000-4000-8000-000000000a01', email: 'anna@acme.test', name: 'Anna Åberg', tenant: 'acme', role: 'owner' },
   { id: '00000000-0000-4000-8000-000000000a02', email: 'adam@acme.test', name: 'Adam Öhman', tenant: 'acme', role: 'admin' },

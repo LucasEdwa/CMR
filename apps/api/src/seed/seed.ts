@@ -1,17 +1,24 @@
+import { hashPassword } from 'better-auth/crypto'
 import { appClient, db } from '../db/client.js'
-import { memberships, tenants, users } from '../db/schema.js'
+import { accounts, memberships, tenants, users } from '../db/schema.js'
 import { withTenant } from '../db/tenant.js'
-import { SEED_TENANTS, SEED_USERS } from './fixtures.js'
+import { SEED_PASSWORD, SEED_TENANTS, SEED_USERS } from './fixtures.js'
 
 const large = process.argv.includes('--large')
 
 async function seed() {
-  // users is a global table (no tenant_id), so it is written without tenant context.
+  const password = await hashPassword(SEED_PASSWORD)
+
+  // Auth tables are global (no tenant_id), so they are written without tenant context.
   for (const u of SEED_USERS) {
     await db
       .insert(users)
-      .values({ id: u.id, email: u.email, name: u.name, emailVerifiedAt: new Date() })
-      .onConflictDoNothing()
+      .values({ id: u.id, email: u.email, name: u.name, emailVerified: true })
+      .onConflictDoUpdate({ target: users.id, set: { name: u.name, emailVerified: true } })
+    await db
+      .insert(accounts)
+      .values({ userId: u.id, accountId: u.id, providerId: 'credential', password })
+      .onConflictDoUpdate({ target: [accounts.providerId, accounts.accountId], set: { password } })
   }
 
   for (const t of Object.values(SEED_TENANTS)) {
@@ -27,7 +34,7 @@ async function seed() {
     })
   }
 
-  console.log(`Seeded ${Object.keys(SEED_TENANTS).length} workspaces and ${SEED_USERS.length} users.`)
+  console.log(`Seeded ${Object.keys(SEED_TENANTS).length} workspaces and ${SEED_USERS.length} users (password ${SEED_PASSWORD}).`)
   if (large) console.log('--large: contacts arrive in Sprint 2; nothing extra to seed yet.')
 }
 
