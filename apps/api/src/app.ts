@@ -20,6 +20,12 @@ import { dealRoutes } from './routes/deals.js'
 import { activityRoutes } from './routes/activities.js'
 import { dataRoutes } from './routes/data.js'
 
+declare module 'fastify' {
+  interface FastifyInstance {
+    routeList: Array<{ method: string; url: string }>
+  }
+}
+
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 export async function buildApp() {
@@ -34,6 +40,13 @@ export async function buildApp() {
     // Behind Railway/Vercel the client IP comes from x-forwarded-for (rate limits use it).
     trustProxy: true,
   })
+
+  // Every route, for the permission-matrix test (which fails when a route has no rule).
+  const routes: Array<{ method: string; url: string }> = []
+  app.addHook('onRoute', (route) => {
+    for (const method of [route.method].flat()) if (method !== 'HEAD') routes.push({ method, url: route.url })
+  })
+  app.decorate('routeList', routes)
 
   if (env.SENTRY_DSN) Sentry.setupFastifyErrorHandler(app)
   registerErrorHandlers(app)
