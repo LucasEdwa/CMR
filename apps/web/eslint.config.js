@@ -20,6 +20,11 @@ export default defineConfig([
     },
   },
   {
+    // Playwright fixtures take a `use` callback; it is not a React hook.
+    files: ['e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
+  {
     // shadcn/ui files export variants next to components by design.
     files: ['src/components/ui/**'],
     rules: { 'react-refresh/only-export-components': 'off' },

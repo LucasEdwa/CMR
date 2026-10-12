@@ -1,30 +1,150 @@
 {
   "app": {
-    "name": "CRM",
-    "tagline": "Grunden är på plats. Funktionerna kommer sprint för sprint."
+    "name": "CRM"
+  },
+  "common": {
+    "save": "Spara",
+    "saved": "Sparat",
+    "cancel": "Avbryt",
+    "remove": "Ta bort",
+    "loading": "Laddar…",
+    "email": "E-post",
+    "password": "Lösenord",
+    "name": "Namn",
+    "role": "Roll",
+    "backToLogin": "Tillbaka till inloggningen",
+    "or": "eller"
   },
   "language": {
     "label": "Språk",
     "sv": "Svenska",
     "en": "English"
   },
+  "roles": {
+    "owner": "Ägare",
+    "admin": "Administratör",
+    "member": "Medlem",
+    "viewer": "Läsare"
+  },
+  "auth": {
+    "loginTitle": "Logga in",
+    "loginSubtitle": "Välkommen tillbaka",
+    "loginButton": "Logga in",
+    "forgotPassword": "Glömt lösenordet?",
+    "noAccount": "Har du inget konto?",
+    "createAccount": "Skapa konto",
+    "signupTitle": "Skapa konto",
+    "signupSubtitle": "Kom igång på några minuter",
+    "signupButton": "Skapa konto",
+    "haveAccount": "Har du redan ett konto?",
+    "passwordHint": "Minst 8 tecken",
+    "checkEmailTitle": "Kolla din inkorg",
+    "checkEmailBody": "Vi har skickat en länk till {{email}}. Klicka på den för att bekräfta din e-postadress.",
+    "resend": "Skicka igen",
+    "resent": "Ett nytt mejl är skickat",
+    "verifyingTitle": "Bekräftar din e-postadress…",
+    "verifyFailedTitle": "Länken fungerar inte",
+    "verifyFailedBody": "Länken har gått ut eller redan använts. Logga in för att få en ny.",
+    "notVerified": "Du behöver bekräfta din e-postadress först.",
+    "forgotTitle": "Glömt lösenordet",
+    "forgotSubtitle": "Vi skickar en länk för att välja ett nytt lösenord.",
+    "forgotButton": "Skicka länk",
+    "forgotSent": "Om det finns ett konto för {{email}} har vi skickat en länk. Den gäller i 1 timme.",
+    "resetTitle": "Välj nytt lösenord",
+    "resetButton": "Spara lösenord",
+    "resetDone": "Lösenordet är ändrat. Logga in med ditt nya lösenord.",
+    "resetInvalid": "Länken har gått ut eller redan använts. Be om en ny.",
+    "newPassword": "Nytt lösenord",
+    "logout": "Logga ut"
+  },
+  "invite": {
+    "title": "Gå med i {{workspace}}",
+    "body": "{{inviter}} har bjudit in {{email}} som {{role}}.",
+    "bodyNoInviter": "{{email}} är inbjuden som {{role}}.",
+    "createAndJoin": "Skapa konto och gå med",
+    "join": "Gå med",
+    "loginToJoin": "Logga in som {{email}} för att gå med.",
+    "wrongAccount": "Du är inloggad som {{current}}, men inbjudan gäller {{email}}.",
+    "logoutAndSwitch": "Logga ut och byt konto",
+    "invalidTitle": "Inbjudan fungerar inte",
+    "invitation_used": "Inbjudan har redan använts.",
+    "invitation_expired": "Inbjudan har gått ut. Be om en ny.",
+    "invitation_revoked": "Inbjudan har dragits tillbaka.",
+    "invitation_invalid": "Länken är inte giltig."
+  },
+  "onboarding": {
+    "title": "Skapa ert konto",
+    "subtitle": "Lägg upp företaget som ni ska använda CRM:et i.",
+    "companyName": "Företagsnamn",
+    "slug": "Adress",
+    "slugHint": "Små bokstäver, siffror och bindestreck",
+    "orgNumber": "Organisationsnummer",
+    "optional": "valfritt",
+    "create": "Skapa",
+    "noWorkspaceTitle": "Du är inte med i något företag",
+    "noWorkspaceBody": "Be en kollega om en inbjudan, eller skapa ett eget företag."
+  },
+  "nav": {
+    "home": "Översikt",
+    "settings": "Inställningar",
+    "menu": "Meny",
+    "switchWorkspace": "Byt företag",
+    "newWorkspace": "Nytt företag",
+    "workspaces": "Företag"
+  },
+  "home": {
+    "greeting": "Hej {{name}}!",
+    "emptyTitle": "Här kommer era kunder att synas",
+    "emptyBody": "Kontakter, företag och affärer kommer i nästa steg. Börja med att bjuda in dina kollegor.",
+    "inviteTeam": "Bjud in kollegor"
+  },
+  "settings": {
+    "title": "Inställningar",
+    "workspace": "Företag",
+    "members": "Användare",
+    "profile": "Min profil",
+    "workspaceName": "Namn",
+    "currency": "Valuta",
+    "timezone": "Tidszon",
+    "dateFormat": "Datumformat",
+    "readOnly": "Bara ägare och administratörer kan ändra inställningarna.",
+    "inviteTitle": "Bjud in",
+    "inviteButton": "Skicka inbjudan",
+    "invited": "Inbjudan skickad till {{email}}",
+    "pending": "Väntande inbjudningar",
+    "expires": "Gäller till {{date}}",
+    "withdraw": "Dra tillbaka",
+    "you": "du",
+    "confirmRemove": "Ta bort {{name}} från {{workspace}}? Personen förlorar åtkomst direkt.",
+    "leave": "Lämna företaget",
+    "confirmLeave": "Lämna {{workspace}}? Du behöver en ny inbjudan för att komma tillbaka."
+  },
   "status": {
     "title": "Systemstatus",
     "api": "API",
     "database": "Databas",
-    "environment": "Miljö",
     "ok": "OK",
-    "down": "Nere",
-    "checking": "Kontrollerar…",
-    "unreachable": "Når inte API:t"
+    "down": "Nere"
   },
-  "formatting": {
-    "title": "Format",
-    "money": "Belopp",
-    "date": "Datum"
-  },
-  "debug": {
-    "throwError": "Kasta testfel (Sentry)"
+  "errors": {
+    "generic": "Något gick fel. Försök igen.",
+    "network": "Kan inte nå servern. Kontrollera anslutningen.",
+    "INVALID_EMAIL_OR_PASSWORD": "Fel e-post eller lösenord.",
+    "EMAIL_NOT_VERIFIED": "Du behöver bekräfta din e-postadress först.",
+    "USER_ALREADY_EXISTS": "Det finns redan ett konto med den e-postadressen.",
+    "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "Det finns redan ett konto med den e-postadressen.",
+    "PASSWORD_TOO_SHORT": "Lösenordet måste vara minst 8 tecken.",
+    "INVALID_TOKEN": "Länken har gått ut eller redan använts.",
+    "rate_limited": "För många försök. Vänta en stund och försök igen.",
+    "slug_taken": "Adressen är redan upptagen.",
+    "invalid_org_number": "Organisationsnumret är inte giltigt.",
+    "invalid_slug": "Använd 3–40 små bokstäver, siffror och bindestreck.",
+    "already_member": "Personen är redan med i företaget.",
+    "last_owner": "Företaget måste ha minst en ägare.",
+    "forbidden": "Du har inte behörighet till det här.",
+    "email_mismatch": "Inbjudan gäller en annan e-postadress.",
+    "required": "Fyll i fältet.",
+    "invalid_email": "Ange en giltig e-postadress."
   },
   "notFound": {
     "title": "Sidan finns inte",

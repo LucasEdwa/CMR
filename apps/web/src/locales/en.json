@@ -1,30 +1,150 @@
 {
   "app": {
-    "name": "CRM",
-    "tagline": "The foundation is in place. Features arrive sprint by sprint."
+    "name": "CRM"
+  },
+  "common": {
+    "save": "Save",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "loading": "Loading…",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "role": "Role",
+    "backToLogin": "Back to login",
+    "or": "or"
   },
   "language": {
     "label": "Language",
     "sv": "Svenska",
     "en": "English"
   },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "member": "Member",
+    "viewer": "Viewer"
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "loginSubtitle": "Welcome back",
+    "loginButton": "Log in",
+    "forgotPassword": "Forgot your password?",
+    "noAccount": "No account yet?",
+    "createAccount": "Create account",
+    "signupTitle": "Create account",
+    "signupSubtitle": "Get started in a few minutes",
+    "signupButton": "Create account",
+    "haveAccount": "Already have an account?",
+    "passwordHint": "At least 8 characters",
+    "checkEmailTitle": "Check your inbox",
+    "checkEmailBody": "We sent a link to {{email}}. Click it to confirm your email address.",
+    "resend": "Send again",
+    "resent": "A new email is on its way",
+    "verifyingTitle": "Confirming your email address…",
+    "verifyFailedTitle": "This link doesn't work",
+    "verifyFailedBody": "The link has expired or was already used. Log in to get a new one.",
+    "notVerified": "You need to confirm your email address first.",
+    "forgotTitle": "Forgot password",
+    "forgotSubtitle": "We'll send you a link to choose a new password.",
+    "forgotButton": "Send link",
+    "forgotSent": "If there is an account for {{email}}, we've sent a link. It is valid for 1 hour.",
+    "resetTitle": "Choose a new password",
+    "resetButton": "Save password",
+    "resetDone": "Your password has been changed. Log in with your new password.",
+    "resetInvalid": "The link has expired or was already used. Ask for a new one.",
+    "newPassword": "New password",
+    "logout": "Log out"
+  },
+  "invite": {
+    "title": "Join {{workspace}}",
+    "body": "{{inviter}} invited {{email}} as {{role}}.",
+    "bodyNoInviter": "{{email}} is invited as {{role}}.",
+    "createAndJoin": "Create account and join",
+    "join": "Join",
+    "loginToJoin": "Log in as {{email}} to join.",
+    "wrongAccount": "You are logged in as {{current}}, but the invitation is for {{email}}.",
+    "logoutAndSwitch": "Log out and switch account",
+    "invalidTitle": "This invitation doesn't work",
+    "invitation_used": "This invitation has already been used.",
+    "invitation_expired": "This invitation has expired. Ask for a new one.",
+    "invitation_revoked": "This invitation has been withdrawn.",
+    "invitation_invalid": "This link is not valid."
+  },
+  "onboarding": {
+    "title": "Set up your company",
+    "subtitle": "Add the company you will use the CRM for.",
+    "companyName": "Company name",
+    "slug": "Address",
+    "slugHint": "Lowercase letters, numbers and hyphens",
+    "orgNumber": "Organisation number",
+    "optional": "optional",
+    "create": "Create",
+    "noWorkspaceTitle": "You're not part of any company",
+    "noWorkspaceBody": "Ask a colleague for an invitation, or create your own company."
+  },
+  "nav": {
+    "home": "Overview",
+    "settings": "Settings",
+    "menu": "Menu",
+    "switchWorkspace": "Switch company",
+    "newWorkspace": "New company",
+    "workspaces": "Companies"
+  },
+  "home": {
+    "greeting": "Hi {{name}}!",
+    "emptyTitle": "Your customers will show up here",
+    "emptyBody": "Contacts, companies and deals come next. Start by inviting your colleagues.",
+    "inviteTeam": "Invite colleagues"
+  },
+  "settings": {
+    "title": "Settings",
+    "workspace": "Company",
+    "members": "Users",
+    "profile": "My profile",
+    "workspaceName": "Name",
+    "currency": "Currency",
+    "timezone": "Time zone",
+    "dateFormat": "Date format",
+    "readOnly": "Only owners and admins can change these settings.",
+    "inviteTitle": "Invite",
+    "inviteButton": "Send invitation",
+    "invited": "Invitation sent to {{email}}",
+    "pending": "Pending invitations",
+    "expires": "Valid until {{date}}",
+    "withdraw": "Withdraw",
+    "you": "you",
+    "confirmRemove": "Remove {{name}} from {{workspace}}? They lose access immediately.",
+    "leave": "Leave company",
+    "confirmLeave": "Leave {{workspace}}? You'll need a new invitation to come back."
+  },
   "status": {
     "title": "System status",
     "api": "API",
     "database": "Database",
-    "environment": "Environment",
     "ok": "OK",
-    "down": "Down",
-    "checking": "Checking…",
-    "unreachable": "Cannot reach the API"
+    "down": "Down"
   },
-  "formatting": {
-    "title": "Formatting",
-    "money": "Amount",
-    "date": "Date"
-  },
-  "debug": {
-    "throwError": "Throw test error (Sentry)"
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Can't reach the server. Check your connection.",
+    "INVALID_EMAIL_OR_PASSWORD": "Wrong email or password.",
+    "EMAIL_NOT_VERIFIED": "You need to confirm your email address first.",
+    "USER_ALREADY_EXISTS": "There is already an account with that email address.",
+    "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "There is already an account with that email address.",
+    "PASSWORD_TOO_SHORT": "The password must be at least 8 characters.",
+    "INVALID_TOKEN": "The link has expired or was already used.",
+    "rate_limited": "Too many attempts. Wait a while and try again.",
+    "slug_taken": "That address is already taken.",
+    "invalid_org_number": "The organisation number is not valid.",
+    "invalid_slug": "Use 3–40 lowercase letters, numbers and hyphens.",
+    "already_member": "This person is already a member.",
+    "last_owner": "The company needs at least one owner.",
+    "forbidden": "You don't have access to this.",
+    "email_mismatch": "The invitation is for a different email address.",
+    "required": "Fill in this field.",
+    "invalid_email": "Enter a valid email address."
   },
   "notFound": {
     "title": "Page not found",
