@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { createDb } from './client.js'
-import { auditLog, invitations, memberships, tenants, users } from './schema.js'
+import { auditLog, companies, contacts, invitations, memberships, savedViews, tags, tenants, users } from './schema.js'
 import { withTenant, withUser, type TenantContext } from './tenant.js'
 import { audit } from './audit.js'
 import { createTenantWithUser, pgErrorOf } from '../test/factories.js'
@@ -32,6 +32,23 @@ beforeAll(async () => {
         }),
       db,
     )
+    await withTenant(
+      ctx,
+      async (tx) => {
+        const [company] = await tx.insert(companies).values({ tenantId: ctx.tenantId, name: 'Isolerat AB' }).returning()
+        await tx.insert(contacts).values({ tenantId: ctx.tenantId, firstName: 'Iso', companyId: company!.id })
+        await tx.insert(tags).values({ tenantId: ctx.tenantId, name: `tag-${randomUUID()}` })
+        await tx.insert(savedViews).values({
+          tenantId: ctx.tenantId,
+          object: 'contacts',
+          name: 'Delad',
+          shared: true,
+          ownerUserId: ctx.userId,
+          config: { query: {}, columns: [] },
+        })
+      },
+      db,
+    )
   }
 })
 
@@ -41,6 +58,10 @@ const tenantTables = [
   { name: 'memberships', table: memberships },
   { name: 'audit_log', table: auditLog },
   { name: 'invitations', table: invitations },
+  { name: 'companies', table: companies },
+  { name: 'contacts', table: contacts },
+  { name: 'tags', table: tags },
+  { name: 'saved_views', table: savedViews },
 ] as const
 
 describe.each(tenantTables)('$name isolation', ({ table }) => {
@@ -85,6 +106,17 @@ describe('memberships writes', () => {
     expect(
       await pgErrorOf(withTenant(A, (tx) => tx.insert(memberships).values({ tenantId: B.tenantId, userId, role: 'member' }), db)),
     ).toMatch(/row-level security/)
+  })
+})
+
+describe('composite foreign keys', () => {
+  it("cannot link a contact to another tenant's company, even by id", async () => {
+    const [bCompany] = await withTenant(B, (tx) => tx.select().from(companies).limit(1), db)
+    expect(
+      await pgErrorOf(
+        withTenant(A, (tx) => tx.insert(contacts).values({ tenantId: A.tenantId, firstName: 'X', companyId: bCompany!.id }), db),
+      ),
+    ).toMatch(/foreign key/)
   })
 })
 

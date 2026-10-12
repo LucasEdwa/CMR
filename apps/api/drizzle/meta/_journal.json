@@ -50,6 +50,27 @@
       "when": 1791800511236,
       "tag": "0006_login_failures",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791801898752,
+      "tag": "0007_contacts_companies",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791801899479,
+      "tag": "0008_contacts_companies_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791802750706,
+      "tag": "0009_swedish_sort_indexes",
+      "breakpoints": true
     }
   ]
 }
