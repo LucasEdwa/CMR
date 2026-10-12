@@ -50,7 +50,7 @@
     "signupSubtitle": "Kom igång på några minuter",
     "signupButton": "Skapa konto",
     "haveAccount": "Har du redan ett konto?",
-    "passwordHint": "Minst 8 tecken",
+    "passwordHint": "Minst 10 tecken. En lösenfras med flera ord är lättast att komma ihåg.",
     "checkEmailTitle": "Kolla din inkorg",
     "checkEmailBody": "Vi har skickat en länk till {{email}}. Klicka på den för att bekräfta din e-postadress.",
     "resend": "Skicka igen",
@@ -166,7 +166,7 @@
     "EMAIL_NOT_VERIFIED": "Du behöver bekräfta din e-postadress först.",
     "USER_ALREADY_EXISTS": "Det finns redan ett konto med den e-postadressen.",
     "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "Det finns redan ett konto med den e-postadressen.",
-    "PASSWORD_TOO_SHORT": "Lösenordet måste vara minst 8 tecken.",
+    "PASSWORD_TOO_SHORT": "Lösenordet måste vara minst 10 tecken.",
     "INVALID_TOKEN": "Länken har gått ut eller redan använts.",
     "rate_limited": "För många försök. Vänta en stund och försök igen.",
     "slug_taken": "Adressen är redan upptagen.",
@@ -192,7 +192,9 @@
     "invalid_lost_reason": "Välj en anledning i listan.",
     "invalid_stage": "Steget finns inte.",
     "invalid_contact": "Kontakten finns inte.",
-    "invalid_money": "Ange ett belopp, till exempel 1 999,50."
+    "invalid_money": "Ange ett belopp, till exempel 1 999,50.",
+    "PASSWORD_COMPROMISED": "Det lösenordet har läckt vid ett dataintrång någon annanstans. Välj ett annat.",
+    "password_check_unavailable": "Lösenordet kunde inte kontrolleras just nu. Försök igen om en stund."
   },
   "notFound": {
     "title": "Sidan finns inte",

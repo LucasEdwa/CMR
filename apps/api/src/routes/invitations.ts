@@ -2,7 +2,9 @@ import type { FastifyInstance } from 'fastify'
 import { createHash, randomBytes } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 import { fromNodeHeaders } from 'better-auth/node'
+import { hashPassword } from 'better-auth/crypto'
 import { withClientIp } from './auth.js'
+import { assertPasswordNotBreached } from '../auth/breached.js'
 import { limit } from '../http/limits.js'
 import {
   acceptInvitationSchema,
@@ -193,6 +195,7 @@ export async function invitationRoutes(app: FastifyInstance) {
       if (!input.name || !input.password) {
         throw new HttpError(400, 'validation_error', 'Name and password are required')
       }
+      await assertPasswordNotBreached(input.password)
       // Opening the emailed link proves the address, so the new account starts verified.
       const ctx = await auth.$context
       const user = await ctx.internalAdapter.createUser({
@@ -205,7 +208,9 @@ export async function invitationRoutes(app: FastifyInstance) {
         userId: user.id,
         providerId: 'credential',
         accountId: user.id,
-        password: await ctx.password.hash(input.password),
+        // Hashed directly: the breach check above already ran, and Better Auth's wrapped hasher
+        // only works inside its own endpoints.
+        password: await hashPassword(input.password),
       })
       const signIn = await auth.api.signInEmail({
         body: { email: invitation.email, password: input.password },

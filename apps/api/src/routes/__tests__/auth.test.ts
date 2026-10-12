@@ -60,6 +60,27 @@ describe('login and logout', () => {
     expect(statuses[10]).toBe(429)
   })
 
+  it('locks an email after 30 wrong passwords from any mix of IPs', async () => {
+    const owner = new TestClient(app)
+    const { email, password } = await signUpVerified(owner)
+    const statuses: number[] = []
+    // Four "attackers" on four IPs, 9 tries each: each stays under the per-IP limit.
+    for (let n = 0; n < 4; n++) {
+      const attacker = new TestClient(app)
+      for (let i = 0; i < 9; i++) statuses.push((await attacker.post('/api/auth/sign-in/email', { email, password: 'wrong-password' })).statusCode)
+    }
+    expect(statuses.slice(0, 30).every((s) => s === 401)).toBe(true)
+    expect(statuses.slice(30).every((s) => s === 429)).toBe(true)
+    // The real owner is locked out too until the window passes: the trade-off for stopping spread-out guessing.
+    expect((await new TestClient(app).post('/api/auth/sign-in/email', { email, password })).statusCode).toBe(429)
+  })
+
+  it('requires passwords of at least 10 characters', async () => {
+    const client = new TestClient(app)
+    const res = await client.post('/api/auth/sign-up/email', { name: 'Kort', email: `kort-${Date.now()}@test.local`, password: 'Kort1234!' })
+    expect(res.statusCode).toBe(400)
+  })
+
   it('does not count successful logins toward the limit', async () => {
     const client = new TestClient(app)
     const { email, password } = await signUpVerified(client)

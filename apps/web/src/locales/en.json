@@ -50,7 +50,7 @@
     "signupSubtitle": "Get started in a few minutes",
     "signupButton": "Create account",
     "haveAccount": "Already have an account?",
-    "passwordHint": "At least 8 characters",
+    "passwordHint": "At least 10 characters. A passphrase of several words is easiest to remember.",
     "checkEmailTitle": "Check your inbox",
     "checkEmailBody": "We sent a link to {{email}}. Click it to confirm your email address.",
     "resend": "Send again",
@@ -166,7 +166,7 @@
     "EMAIL_NOT_VERIFIED": "You need to confirm your email address first.",
     "USER_ALREADY_EXISTS": "There is already an account with that email address.",
     "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL": "There is already an account with that email address.",
-    "PASSWORD_TOO_SHORT": "The password must be at least 8 characters.",
+    "PASSWORD_TOO_SHORT": "The password must be at least 10 characters.",
     "INVALID_TOKEN": "The link has expired or was already used.",
     "rate_limited": "Too many attempts. Wait a while and try again.",
     "slug_taken": "That address is already taken.",
@@ -192,7 +192,9 @@
     "invalid_lost_reason": "Choose a reason from the list.",
     "invalid_stage": "The stage doesn't exist.",
     "invalid_contact": "The contact doesn't exist.",
-    "invalid_money": "Enter an amount, for example 1,999.50."
+    "invalid_money": "Enter an amount, for example 1,999.50.",
+    "PASSWORD_COMPROMISED": "That password has leaked in a data breach elsewhere. Choose another one.",
+    "password_check_unavailable": "The password could not be checked right now. Try again in a moment."
   },
   "notFound": {
     "title": "Page not found",

@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { localeSchema } from '@crm/shared'
+import { MIN_PASSWORD_LENGTH, localeSchema } from '@crm/shared'
+import { haveIBeenPwned } from 'better-auth/plugins'
 import { db } from '../db/client.js'
 import { accounts, rateLimits, sessions, users, verifications } from '../db/schema.js'
 import { env } from '../env.js'
@@ -18,6 +19,8 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.WEB_ORIGIN],
   telemetry: { enabled: false },
+  // Signup, password reset and password change reject passwords from known breaches.
+  plugins: [haveIBeenPwned({ enabled: env.PASSWORD_BREACH_CHECK })],
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: { users, sessions, accounts, verifications, rateLimits },
@@ -62,7 +65,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 8,
+    minPasswordLength: MIN_PASSWORD_LENGTH,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
     resetPasswordTokenExpiresIn: 60 * 60,

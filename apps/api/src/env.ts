@@ -19,9 +19,12 @@ const envSchema = z.object({
   // Which proxies may set X-Forwarded-For (the client IP behind rate limits): "true" (any, dev
   // and tests only), a hop count such as "2", or a comma list of proxy IPs/CIDRs.
   TRUST_PROXY: z.string().optional(),
+  // Reject passwords found in known breaches (Have I Been Pwned). Off in tests (no network).
+  PASSWORD_BREACH_CHECK: z.stringbool().optional(),
 })
 
-export const env = envSchema.parse(process.env)
+const parsed = envSchema.parse(process.env)
+export const env = { ...parsed, PASSWORD_BREACH_CHECK: parsed.PASSWORD_BREACH_CHECK ?? parsed.APP_ENV !== 'test' }
 
 if (['staging', 'production'].includes(env.APP_ENV) && env.BETTER_AUTH_SECRET.startsWith('dev-only')) {
   throw new Error('BETTER_AUTH_SECRET must be set outside development')

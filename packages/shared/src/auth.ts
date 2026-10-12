@@ -9,7 +9,9 @@ export type Locale = z.infer<typeof localeSchema>
 export const isTimezone = (tz: string) => tz === 'UTC' || Intl.supportedValuesOf('timeZone').includes(tz)
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email())
-export const passwordSchema = z.string().min(8).max(128)
+// Length over rules (NIST 800-63B); known-breached passwords are rejected by the API.
+export const MIN_PASSWORD_LENGTH = 10
+export const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(128)
 
 export const signupSchema = z.object({
   name: z.string().trim().min(1).max(100),
