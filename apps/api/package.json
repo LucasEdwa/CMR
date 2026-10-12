@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/migrate.ts",
     "seed": "tsx --env-file-if-exists=.env src/seed/seed.ts",
-    "seed:large": "tsx --env-file-if-exists=.env src/seed/seed.ts --large"
+    "seed:large": "tsx --env-file-if-exists=.env src/seed/seed.ts --large",
+    "seed:sample": "tsx --env-file-if-exists=.env src/seed/sample.ts"
   },
   "dependencies": {
     "@crm/shared": "workspace:*",

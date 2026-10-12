@@ -16,7 +16,8 @@
     "db:migrate": "pnpm --filter @crm/api db:migrate",
     "db:generate": "pnpm --filter @crm/api db:generate",
     "seed": "pnpm --filter @crm/api seed",
-    "seed:large": "pnpm --filter @crm/api seed:large"
+    "seed:large": "pnpm --filter @crm/api seed:large",
+    "seed:sample": "pnpm --filter @crm/api seed:sample"
   },
   "devDependencies": {
     "turbo": "^2.11.7",
