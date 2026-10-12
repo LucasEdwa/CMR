@@ -11,7 +11,7 @@ export function Home() {
   const firstName = me?.user.name.split(' ')[0] ?? ''
 
   return (
-    <div className="mx-auto grid max-w-3xl gap-6">
+    <div className="mx-auto grid grid-cols-1 max-w-3xl gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t('home.greeting', { name: firstName })}</h1>
       <section className="grid justify-items-center gap-3 rounded-lg border border-dashed px-6 py-12 text-center">
         <Users className="text-muted-foreground size-10" aria-hidden />

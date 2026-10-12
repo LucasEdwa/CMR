@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { CONSENT_BASES, LEAD_SOURCES, LIFECYCLE_STAGES, createContactSchema, type Contact, type CreateContactInput } from '@crm/shared'
+import { CONSENT_BASES, LIFECYCLE_STAGES, createContactSchema, type Contact, type CreateContactInput } from '@crm/shared'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,6 +22,7 @@ import { ApiRequestError } from '@/lib/api'
 import { recordApi, useRecordMutation } from '@/lib/crm'
 import { errorMessage } from '@/lib/errors'
 import { describedBy, fieldError } from '@/lib/form'
+import { picklistLabel, usePicklists } from '@/lib/deals'
 
 type Ref = { id: string; name: string } | null
 
@@ -53,6 +54,8 @@ export function ContactForm({ open, onOpenChange, contact, defaultCompany = null
 function ContactFormBody({ contact, defaultCompany, onDone, onCancel }: { contact?: Contact; defaultCompany: Ref; onDone: (c: Contact) => void; onCancel: () => void }) {
   const { t } = useTranslation()
   const { data: me } = useMe()
+  const picklists = usePicklists()
+  const sourceKeys = [...new Set([...(picklists.data?.lead_source.map((s) => s.key) ?? []), ...(contact?.leadSource ? [contact.leadSource] : [])])]
   const [company, setCompany] = useState<Ref>(contact?.company ?? defaultCompany)
   const [suggestion, setSuggestion] = useState<Ref>(null)
   const [duplicate, setDuplicate] = useState<{ contactId: string; name: string } | null>(null)
@@ -165,9 +168,9 @@ function ContactFormBody({ contact, defaultCompany, onDone, onCancel }: { contac
       <Field id="leadSource" label={t('contacts.leadSource')}>
         <NativeSelect id="leadSource" {...form.register('leadSource')}>
           <option value="">{t('common.none')}</option>
-          {LEAD_SOURCES.map((s) => (
-            <option key={s} value={s}>
-              {t(`sources.${s}`)}
+          {sourceKeys.map((key) => (
+            <option key={key} value={key}>
+              {picklistLabel(t, picklists.data, 'lead_source', key)}
             </option>
           ))}
         </NativeSelect>

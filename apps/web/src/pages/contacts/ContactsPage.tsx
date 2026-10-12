@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Plus, Users } from 'lucide-react'
-import { LIFECYCLE_STAGES, LEAD_SOURCES, type Contact } from '@crm/shared'
+import { LIFECYCLE_STAGES, type Contact } from '@crm/shared'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,6 +18,7 @@ import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { useListState } from '@/lib/listState'
 import { ContactForm } from './ContactForm'
+import { picklistLabel, usePicklists } from '@/lib/deals'
 
 const DEFAULT_COLUMNS = ['name', 'email', 'company', 'lifecycleStage', 'owner']
 
@@ -29,6 +30,7 @@ export function ContactsPage() {
   const state = useListState(DEFAULT_COLUMNS)
   const { params, apiParams, update, columns } = state
   const list = useContactList(apiParams)
+  const picklists = usePicklists()
   const [creating, setCreating] = useState(false)
 
   const all: Column<Contact>[] = [
@@ -38,7 +40,7 @@ export function ContactsPage() {
     { id: 'title', header: t('contacts.title_field'), cell: (c) => c.title },
     { id: 'company', header: t('contacts.company'), sortKey: 'company', cell: (c) => c.company?.name },
     { id: 'lifecycleStage', header: t('contacts.lifecycleStage'), sortKey: 'lifecycleStage', cell: (c) => t(`stages.${c.lifecycleStage}`) },
-    { id: 'leadSource', header: t('contacts.leadSource'), cell: (c) => c.leadSource && t(`sources.${c.leadSource}`, { defaultValue: c.leadSource }) },
+    { id: 'leadSource', header: t('contacts.leadSource'), cell: (c) => picklistLabel(t, picklists.data, 'lead_source', c.leadSource) },
     { id: 'owner', header: t('list.owner'), cell: (c) => c.owner?.name },
     { id: 'tags', header: t('list.tags'), cell: (c) => <span className="flex gap-1">{c.tags.map((tag) => <Badge key={tag} variant="secondary">{tag}</Badge>)}</span> },
     { id: 'city', header: t('contacts.city'), cell: (c) => c.city },
@@ -83,9 +85,9 @@ export function ContactsPage() {
             <Field id="filter-source" label={t('contacts.leadSource')}>
               <NativeSelect id="filter-source" value={params.get('source') ?? ''} onChange={(e) => update({ source: e.target.value || null })}>
                 <option value="">{t('common.all')}</option>
-                {LEAD_SOURCES.map((s) => (
-                  <option key={s} value={s}>
-                    {t(`sources.${s}`)}
+                {picklists.data?.lead_source.map((s) => (
+                  <option key={s.key} value={s.key}>
+                    {picklistLabel(t, picklists.data, 'lead_source', s.key)}
                   </option>
                 ))}
               </NativeSelect>

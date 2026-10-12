@@ -16,6 +16,8 @@ import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { ContactForm } from '../contacts/ContactForm'
 import { CompanyForm } from './CompanyForm'
+import { RelatedDeals } from '../deals/RelatedDeals'
+import { picklistLabel, usePicklists } from '@/lib/deals'
 
 export function CompanyDetail() {
   const { t, i18n } = useTranslation()
@@ -24,6 +26,7 @@ export function CompanyDetail() {
   const { role } = useActiveWorkspace()
   const canWrite = role !== 'viewer'
   const company = useCompany(id)
+  const picklists = usePicklists()
   const contacts = useContactList(new URLSearchParams({ companyId: id, pageSize: '100' }))
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -38,7 +41,7 @@ export function CompanyDetail() {
   const address = [c.street, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')
 
   return (
-    <div className="mx-auto grid max-w-4xl gap-6">
+    <div className="mx-auto grid grid-cols-1 max-w-4xl gap-6">
       <Link to="/companies" className="text-muted-foreground inline-flex items-center gap-1 text-sm hover:underline">
         <ArrowLeft className="size-4" aria-hidden />
         {t('companies.title')}
@@ -72,7 +75,7 @@ export function CompanyDetail() {
         )}
       </header>
 
-      <div className="grid gap-6 md:grid-cols-[1fr_20rem]">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_20rem]">
         <Card>
           <CardHeader>
             <CardTitle>
@@ -86,7 +89,7 @@ export function CompanyDetail() {
                 [t('companies.vatNumber'), c.vatNumber],
                 [t('companies.domain'), c.domain && <a className="underline" href={`https://${c.domain}`} target="_blank" rel="noreferrer">{c.domain}</a>],
                 [t('companies.phone'), c.phone && <a className="underline" href={`tel:${c.phone}`}>{c.phone}</a>],
-                [t('companies.industry'), c.industry],
+                [t('companies.industry'), picklistLabel(t, picklists.data, 'industry', c.industry)],
                 [t('companies.size'), c.size && t(`sizes.${c.size}`)],
                 [t('list.owner'), c.owner?.name],
                 [t('contacts.address'), address],
@@ -96,6 +99,7 @@ export function CompanyDetail() {
           </CardContent>
         </Card>
 
+        <div className="grid min-w-0 content-start gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>
@@ -126,6 +130,8 @@ export function CompanyDetail() {
             )}
           </CardContent>
         </Card>
+        <RelatedDeals filter={{ companyId: c.id }} company={{ id: c.id, name: c.name }} />
+        </div>
       </div>
 
       <CompanyForm open={editing} onOpenChange={setEditing} company={c} />
