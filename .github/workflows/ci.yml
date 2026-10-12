@@ -21,11 +21,17 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 2s --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.31
+        ports: ['1025:1025', '8025:8025']
     env:
       DATABASE_SUPERUSER_URL: postgres://postgres:postgres@localhost:5432/postgres
       DATABASE_URL: postgres://app_user:app_user@localhost:5432/crm
       DATABASE_OWNER_URL: postgres://crm_owner:crm_owner@localhost:5432/crm
       RUN_WORKER: 'true'
+      SMTP_URL: smtp://localhost:1025
+      EMAIL_DELIVERY: queue
+      BETTER_AUTH_SECRET: ci-only-secret-0123456789abcdef0123456789
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

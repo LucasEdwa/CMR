@@ -14,5 +14,10 @@ services:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 2s
       retries: 20
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - '1025:1025'
+      - '8025:8025'
 volumes:
   pgdata:
