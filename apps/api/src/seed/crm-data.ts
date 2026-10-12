@@ -1,7 +1,21 @@
-import { asc, count, eq, sql } from 'drizzle-orm'
-import { CONSENT_BASES, DEFAULT_PICKLISTS, LEAD_SOURCES, LIFECYCLE_STAGES, COMPANY_SIZES } from '@crm/shared'
+import { asc, count, eq, inArray, sql } from 'drizzle-orm'
+import { CALL_OUTCOMES, CONSENT_BASES, DEFAULT_PICKLISTS, LEAD_SOURCES, LIFECYCLE_STAGES, COMPANY_SIZES, plainToRichDoc } from '@crm/shared'
 import type { Tx } from '../db/client.js'
-import { companies, contacts, contactTags, companyTags, dealContacts, dealStageHistory, deals, pipelineStages, tags } from '../db/schema.js'
+import {
+  activities,
+  activityLinks,
+  companies,
+  contacts,
+  contactTags,
+  companyTags,
+  dealContacts,
+  dealStageHistory,
+  deals,
+  pipelineStages,
+  tags,
+  tasks,
+  tenants,
+} from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { buildSearchText } from '../services/common.js'
 import { ensureDefaultPipeline } from '../services/pipelines.js'
@@ -193,4 +207,111 @@ export async function seedDeals(tx: Tx, ctx: TenantContext, opts: { count: numbe
     })
   }
   return opts.count
+}
+
+const NOTES = [
+  'Kunden vill se en demo med hela teamet innan beslut.',
+  'Budgeten är godkänd för Q1. Återkom med offert.',
+  'Pratade om integration med Fortnox, viktigt för dem.',
+  'Beslutsfattare är ekonomichefen, inte IT.',
+  'Önskar faktura per kvartal.',
+]
+const CALL_SUBJECTS = ['Uppföljning', 'Behovsanalys', 'Prisfråga', 'Avstämning', 'Första samtal']
+const MEETING_SUBJECTS = ['Demo', 'Workshop', 'Avtalsgenomgång', 'Lunchmöte']
+const TASK_TITLES = ['Ring och stäm av', 'Skicka offert', 'Boka demo', 'Följ upp mejl', 'Skicka avtal', 'Kolla budget med ekonomi', 'Förbered presentation']
+
+// Activities on open deals (also linked to their contacts and company), and a spread of tasks per
+// user: some overdue, some due today, some upcoming and a few completed. Dates are relative to today.
+export async function seedActivities(tx: Tx, ctx: TenantContext, opts: { ownerIds: string[]; seed: number }) {
+  const [existing] = await tx.select({ n: count() }).from(activities)
+  if (existing!.n > 0) return { activities: 0, tasks: 0 }
+  const r = rng(opts.seed)
+  const DAY = 86_400_000
+  const [tenant] = await tx.select({ tz: tenants.timezone }).from(tenants).where(eq(tenants.id, ctx.tenantId))
+  const tz = tenant!.tz
+  const openDeals = await tx
+    .select({ id: deals.id, companyId: deals.companyId, ownerUserId: deals.ownerUserId, lastActivityAt: deals.lastActivityAt })
+    .from(deals)
+    .where(eq(deals.status, 'open'))
+    .orderBy(asc(deals.createdAt))
+  const links = await tx
+    .select({ dealId: dealContacts.dealId, contactId: dealContacts.contactId })
+    .from(dealContacts)
+    .where(inArray(dealContacts.dealId, openDeals.length ? openDeals.map((d) => d.id) : [ctx.tenantId]))
+
+  let activityCount = 0
+  for (const deal of openDeals) {
+    const n = 1 + Math.floor(r() * 3)
+    for (let i = 0; i < n; i++) {
+      // Never newer than the deal's last activity, so stale deals stay stale.
+      const occurredAt = new Date(deal.lastActivityAt.getTime() - i * Math.floor(1 + r() * 6) * DAY)
+      const type = pick(r, ['note', 'call', 'call', 'meeting', 'email'] as const)
+      // Notes and meetings always have text; calls and emails sometimes.
+      const text = type === 'note' || type === 'meeting' || r() < 0.6 ? pick(r, NOTES) : ''
+      const [a] = await tx
+        .insert(activities)
+        .values({
+          tenantId: ctx.tenantId,
+          type,
+          subject: type === 'note' ? null : type === 'call' ? pick(r, CALL_SUBJECTS) : type === 'meeting' ? pick(r, MEETING_SUBJECTS) : 'Offert bifogad',
+          body: text ? plainToRichDoc(text) : null,
+          bodyText: text,
+          occurredAt,
+          durationMinutes: type === 'call' ? 2 + Math.floor(r() * 25) : type === 'meeting' ? 30 + 15 * Math.floor(r() * 4) : null,
+          outcome: type === 'call' ? pick(r, CALL_OUTCOMES) : null,
+          direction: type === 'email' ? 'outbound' : null,
+          authorUserId: deal.ownerUserId ?? ctx.userId,
+          createdAt: occurredAt,
+          updatedAt: occurredAt,
+        })
+        .returning({ id: activities.id })
+      const rows = [
+        { dealId: deal.id },
+        ...(deal.companyId ? [{ companyId: deal.companyId }] : []),
+        ...links.filter((l) => l.dealId === deal.id).map((l) => ({ contactId: l.contactId })),
+      ]
+      await tx.insert(activityLinks).values(rows.map((l) => ({ tenantId: ctx.tenantId, activityId: a!.id, ...l })))
+      activityCount++
+    }
+  }
+
+  const localDate = (offset: number) => new Intl.DateTimeFormat('sv-SE', { timeZone: tz }).format(new Date(Date.now() + offset * DAY))
+  const dueAt = (date: string, time: string | null) =>
+    sql`((${time ? sql`${date}::date + ${time}::time` : sql`${date}::date + 1`})::timestamp at time zone ${tz})`
+  let taskCount = 0
+  for (const userId of opts.ownerIds) {
+    const theirs = openDeals.filter((d) => d.ownerUserId === userId && d.lastActivityAt.getTime() > Date.now() - 10 * DAY)
+    const plan: Array<{ offset: number; time: string | null; done?: boolean }> = [
+      { offset: -3, time: null },
+      { offset: -1, time: '10:00' },
+      { offset: 0, time: null },
+      { offset: 0, time: '15:30' },
+      { offset: 2, time: null },
+      { offset: 5, time: '09:00' },
+      { offset: 9, time: null },
+      { offset: -2, time: null, done: true },
+      { offset: -5, time: null, done: true },
+    ]
+    for (const [i, item] of plan.entries()) {
+      const date = localDate(item.offset)
+      const deal = theirs[i % Math.max(theirs.length, 1)]
+      await tx.insert(tasks).values({
+        tenantId: ctx.tenantId,
+        title: pick(r, TASK_TITLES),
+        dueDate: date,
+        dueTime: item.time,
+        dueAt: dueAt(date, item.time),
+        priority: i === 1 ? 'high' : 'normal',
+        assigneeUserId: userId,
+        dealId: i < 6 ? (deal?.id ?? null) : null,
+        completedAt: item.done ? new Date(Date.now() + item.offset * DAY) : null,
+        completedByUserId: item.done ? userId : null,
+        // Seeded tasks never trigger reminder emails.
+        reminderSentFor: date,
+        createdByUserId: ctx.userId,
+      })
+      taskCount++
+    }
+  }
+  return { activities: activityCount, tasks: taskCount }
 }
