@@ -1,26 +1,10 @@
-import type { Browser, Page } from '@playwright/test'
-import { BASE_ORIGIN, apiPost, expect, freshCompany, test, uniqueEmail } from './support/fixtures.ts'
+import type { Page } from '@playwright/test'
+import { BASE_ORIGIN, apiPost, colleague, expect, freshCompany, test } from './support/fixtures.ts'
 import { linkFromEmail } from './support/mailpit.ts'
 
 const stockholmDate = (offsetDays = 0) =>
   new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm' }).format(new Date(Date.now() + offsetDays * 86_400_000))
 const stockholmHour = () => Number(new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Stockholm', hour: '2-digit' }).format(new Date()))
-
-// Invites a colleague into the owner's company and returns a logged-in page for them.
-async function colleague(owner: Page, browser: Browser, name: string, role = 'member') {
-  const email = uniqueEmail(name.toLowerCase())
-  await apiPost(owner, '/workspace/invitations', { email, role })
-  const token = (await linkFromEmail(email, '/invite/')).split('/invite/')[1]!
-  const context = await browser.newContext({ locale: 'sv-SE', timezoneId: 'Europe/Stockholm', extraHTTPHeaders: { 'x-forwarded-for': `10.9.${Date.now() % 250}.${Math.floor(Math.random() * 250)}` } })
-  const page = await context.newPage()
-  const res = await page.request.post(`${BASE_ORIGIN}/api/invitations/${token}/accept`, {
-    data: { name, password: 'Secret123!' },
-    headers: { origin: BASE_ORIGIN },
-  })
-  expect(res.status(), await res.text()).toBe(200)
-  const id = ((await (await page.request.get(`${BASE_ORIGIN}/api/me`)).json()) as { user: { id: string } }).user.id
-  return { page, email, id, close: () => context.close() }
-}
 
 async function dealWithContactAndCompany(page: Page) {
   const company = await apiPost(page, '/companies', { name: 'Tidslinje AB' })
