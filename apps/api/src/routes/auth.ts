@@ -73,6 +73,9 @@ export async function authRoutes(app: FastifyInstance) {
         if (key !== 'set-cookie') reply.header(key, value)
       })
       if (cookies.length) reply.header('set-cookie', cookies)
+      // Better Auth's own response (JSON, or empty with a redirect) is passed through with its content
+      // type; helmet sends nosniff, so it is never rendered as HTML.
+      // nosemgrep: direct-response-write
       return reply.send(response.body ? await response.text() : null)
     },
   })
