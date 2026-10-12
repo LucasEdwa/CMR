@@ -4,6 +4,8 @@ import { sql } from 'drizzle-orm'
 import { buildApp } from '../../app.js'
 import { db } from '../../db/client.js'
 import { TestClient, addMember, createWorkspace, signUpVerified } from '../../test/client.js'
+import { asSystemIn } from '../../test/factories.js'
+import { invitations } from '../../db/schema.js'
 import { totp } from '../../test/totp.js'
 
 let app: FastifyInstance
@@ -48,6 +50,27 @@ describe('limits', () => {
     for (let i = 0; i < 29; i++) await ok(owner.post('/api/workspace/invitations', { email: `p${i}@test.local`, role: 'member' }), 201)
     // A second admin on another IP shares the workspace's budget.
     expect((await adam.client.post('/api/workspace/invitations', { email: 'over@test.local', role: 'member' })).statusCode).toBe(429)
+  })
+
+  it('caps invitations per workspace per day', async () => {
+    const { owner, ws } = await setup()
+    const ownerId = (await ok(owner.get('/api/me'))).user.id
+    // As if 100 had been sent earlier today, spread over hours the hourly limit has forgotten.
+    await asSystemIn(ws.id, (tx) =>
+      tx.insert(invitations).values(
+        Array.from({ length: 100 }, (_, i) => ({
+          tenantId: ws.id,
+          email: `earlier${i}@test.local`,
+          role: 'member' as const,
+          tokenHash: `hash-${ws.id}-${i}`,
+          invitedByUserId: ownerId,
+          expiresAt: new Date(Date.now() + 86_400_000),
+        })),
+      ),
+    )
+    const res = await owner.post('/api/workspace/invitations', { email: 'one-more@test.local', role: 'member' })
+    expect(res.statusCode).toBe(429)
+    expect(res.json().error.code).toBe('rate_limited')
   })
 
   it('stops any query after 15 seconds', async () => {
