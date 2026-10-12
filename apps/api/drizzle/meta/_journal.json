@@ -155,6 +155,27 @@
       "when": 1791835374912,
       "tag": "0021_two_factor",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791836115152,
+      "tag": "0022_workspace_deletion_grace",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791836116067,
+      "tag": "0023_workspace_deletion_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791838973806,
+      "tag": "0024_redact_erased_audit",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -13,11 +12,11 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Field } from '@/components/Field'
 import { NativeSelect } from '@/components/NativeSelect'
-import { ME_KEY, useActiveWorkspace, useResetSession } from '@/hooks/useMe'
+import { ME_KEY, useActiveWorkspace } from '@/hooks/useMe'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { api, send } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
-import { formatWithPattern } from '@/lib/format'
+import { formatDateTime, formatWithPattern } from '@/lib/format'
 import { describedBy, fieldError } from '@/lib/form'
 
 const WORKSPACE_KEY = ['workspace'] as const
@@ -116,24 +115,38 @@ export function WorkspaceSettings() {
         )}
       </fieldset>
     </form>
-    {role === 'owner' && <DeleteWorkspace name={workspace.data.name} />}
+    {role === 'owner' && <DeleteWorkspace name={workspace.data.name} scheduledFor={workspace.data.deletionScheduledFor} />}
     </div>
   )
 }
 
-// Owners only: erases the workspace and everything in it after the name is typed again.
-function DeleteWorkspace({ name }: { name: string }) {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const reset = useResetSession()
+// Owners only: asks for the workspace to be erased after a 7-day grace period (name + password),
+// and cancels a pending request.
+function DeleteWorkspace({ name, scheduledFor }: { name: string; scheduledFor: string | null }) {
+  const { t, i18n } = useTranslation()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [confirm, setConfirm] = useState('')
+  const [password, setPassword] = useState('')
+  const done = async () => {
+    setOpen(false)
+    setConfirm('')
+    setPassword('')
+    await queryClient.invalidateQueries({ queryKey: WORKSPACE_KEY })
+  }
   const remove = useMutation({
-    mutationFn: () => send('DELETE', '/workspace', { confirm }),
+    mutationFn: () => send('DELETE', '/workspace', { confirm, password }),
     onSuccess: async () => {
-      toast.success(t('settings.deleted', { name }))
-      await reset()
-      navigate('/')
+      toast.success(t('settings.deletionScheduledToast'))
+      await done()
+    },
+    onError: (err) => toast.error(errorMessage(t, err)),
+  })
+  const cancel = useMutation({
+    mutationFn: () => send('POST', '/workspace/cancel-deletion'),
+    onSuccess: async () => {
+      toast.success(t('settings.deletionCancelled'))
+      await done()
     },
     onError: (err) => toast.error(errorMessage(t, err)),
   })
@@ -142,10 +155,21 @@ function DeleteWorkspace({ name }: { name: string }) {
       <h2 id="danger-zone" className="text-destructive font-semibold">
         {t('settings.dangerZone')}
       </h2>
-      <p className="text-muted-foreground text-sm">{t('settings.deleteWorkspaceBody')}</p>
-      <Button variant="destructive" className="justify-self-start" onClick={() => setOpen(true)}>
-        {t('settings.deleteWorkspace')}
-      </Button>
+      {scheduledFor ? (
+        <>
+          <p className="text-sm">{t('settings.deletionPending', { date: formatDateTime(scheduledFor, i18n.language) })}</p>
+          <Button className="justify-self-start" onClick={() => cancel.mutate()} disabled={cancel.isPending}>
+            {t('settings.cancelDeletion')}
+          </Button>
+        </>
+      ) : (
+        <>
+          <p className="text-muted-foreground text-sm">{t('settings.deleteWorkspaceBody')}</p>
+          <Button variant="destructive" className="justify-self-start" onClick={() => setOpen(true)}>
+            {t('settings.deleteWorkspace')}
+          </Button>
+        </>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -155,16 +179,19 @@ function DeleteWorkspace({ name }: { name: string }) {
           <Field id="confirm-name" label={t('settings.typeName', { name })}>
             <Input id="confirm-name" value={confirm} autoComplete="off" onChange={(e) => setConfirm(e.target.value)} />
           </Field>
+          <Field id="confirm-password" label={t('security.currentPassword')}>
+            <Input id="confirm-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </Field>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
-              disabled={confirm.trim().toLowerCase() !== name.trim().toLowerCase() || remove.isPending}
+              disabled={confirm.trim().toLowerCase() !== name.trim().toLowerCase() || !password || remove.isPending}
               onClick={() => remove.mutate()}
             >
-              {t('settings.deleteForever')}
+              {t('settings.scheduleDeletion')}
             </Button>
           </DialogFooter>
         </DialogContent>

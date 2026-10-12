@@ -69,6 +69,8 @@ export const workspaceSchema = z.object({
   dateFormat: z.enum(DATE_FORMATS),
   ownRecordsOnly: z.boolean(),
   requireTwoFactor: z.boolean(),
+  // Set while an owner's deletion request waits out the grace period.
+  deletionScheduledFor: z.string().nullable(),
 })
 export type Workspace = z.infer<typeof workspaceSchema>
 
@@ -138,8 +140,9 @@ export const acceptInvitationSchema = z.object({
 export const updateMemberSchema = z.object({ role: roleSchema })
 
 export const deleteWorkspaceSchema = z.object({
-  // The workspace name, typed again to confirm.
+  // The workspace name, typed again to confirm, and the owner's password.
   confirm: z.string().trim().min(1),
+  password: z.string().min(1).max(128),
 })
 
 // ---- account security -----------------------------------------------------------

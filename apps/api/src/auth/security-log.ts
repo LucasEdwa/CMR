@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { and, eq, sql } from 'drizzle-orm'
 import type { FastifyRequest } from 'fastify'
 import type { SecurityEventType } from '@crm/shared'
@@ -23,9 +24,25 @@ export async function userIdByEmail(email: string) {
   return u?.id ?? null
 }
 
+// Better Auth's hashed identifier (storeIdentifier: 'hashed' in auth.ts).
+const hashedIdentifier = (identifier: string) => createHash('sha256').update(identifier).digest('base64url')
+
 // The user a password-reset token belongs to (read before Better Auth consumes it).
 export async function userIdByResetToken(token: string) {
-  const [v] = await db.select({ value: verifications.value }).from(verifications).where(eq(verifications.identifier, `reset-password:${token}`))
+  const [v] = await db
+    .select({ value: verifications.value })
+    .from(verifications)
+    .where(eq(verifications.identifier, hashedIdentifier(`reset-password:${token}`)))
+  return v?.value ?? null
+}
+
+// The user a pending 2FA login belongs to, from the two-factor cookie set after the password step.
+// Only used to count wrong codes: Better Auth itself checks the cookie's signature.
+export async function userIdOfPendingTwoFactor(cookieHeader: string | undefined) {
+  const match = /(?:^|;\s*)(?:__Secure-)?crm\.two_factor=([^;]+)/.exec(cookieHeader ?? '')
+  const identifier = match?.[1] ? decodeURIComponent(match[1]).split('.')[0] : ''
+  if (!identifier) return null
+  const [v] = await db.select({ value: verifications.value }).from(verifications).where(eq(verifications.identifier, hashedIdentifier(identifier)))
   return v?.value ?? null
 }
 

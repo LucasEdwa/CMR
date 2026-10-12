@@ -11,6 +11,8 @@ export const QUEUES = {
   taskReminder: 'tasks.reminder',
   // Runs one CSV import (Sprint 5).
   importRun: 'imports.run',
+  // Erases a workspace whose deletion grace period is over.
+  workspaceDelete: 'workspaces.delete',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]

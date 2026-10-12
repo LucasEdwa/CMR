@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Building2, Check, ChevronsUpDown, Handshake, Home, ListTodo, LogOut, Menu, Plus, Settings, Trash2, Users } from 'lucide-react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { workspaceSchema } from '@crm/shared'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -16,7 +17,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useActiveWorkspace, useMe, useResetSession, useWorkspaceCacheGuard } from '@/hooks/useMe'
-import { send } from '@/lib/api'
+import { api, send } from '@/lib/api'
+import { formatDateTime } from '@/lib/format'
 import { authApi } from '@/lib/auth'
 import { errorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
@@ -148,6 +150,25 @@ function UserMenu() {
   )
 }
 
+// Shown to everyone while an owner's request to delete the workspace waits out its grace period.
+function DeletionBanner() {
+  const { t, i18n } = useTranslation()
+  const { role } = useActiveWorkspace()
+  const workspace = useQuery({ queryKey: ['workspace'], queryFn: () => api('/workspace', workspaceSchema), staleTime: 60_000 })
+  const when = workspace.data?.deletionScheduledFor
+  if (!when) return null
+  return (
+    <div role="alert" className="bg-destructive/10 text-destructive border-destructive/30 flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-sm">
+      <span>{t('settings.deletionBanner', { name: workspace.data!.name, date: formatDateTime(when, i18n.language) })}</span>
+      {role === 'owner' && (
+        <NavLink to="/settings" className="font-medium underline">
+          {t('settings.cancelDeletion')}
+        </NavLink>
+      )}
+    </div>
+  )
+}
+
 export function AppShell() {
   const { t } = useTranslation()
   useWorkspaceCacheGuard()
@@ -181,6 +202,7 @@ export function AppShell() {
             <UserMenu />
           </div>
         </header>
+        <DeletionBanner />
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6">
           <Outlet />
         </main>

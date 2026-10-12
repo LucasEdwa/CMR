@@ -47,7 +47,9 @@ export const auth = betterAuth({
     },
   },
   account: { modelName: 'accounts' },
-  verification: { modelName: 'verifications' },
+  // Reset tokens and pending 2FA logins are stored as SHA-256 hashes, so a database leak exposes
+  // no usable links.
+  verification: { modelName: 'verifications', storeIdentifier: 'hashed' },
   rateLimit: {
     enabled: true,
     storage: 'database',

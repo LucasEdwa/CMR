@@ -77,6 +77,41 @@ const taskReminder: Template<{ name: string; title: string; time: string | null;
   }),
 }
 
+type DeletionParams = { kind: 'scheduled' | 'cancelled'; workspace: string; when: Date | null; actor: string }
+const dateIn = (locale: Locale, d: Date | null) =>
+  d ? new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'sv-SE', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Stockholm' }).format(d) : ''
+
+const workspaceDeletion: Template<DeletionParams> = {
+  sv: ({ kind, workspace, when, actor }) =>
+    kind === 'scheduled'
+      ? {
+          subject: `${workspace} raderas ${dateIn('sv', when)}`,
+          lines: [`${actor} har begärt att ${workspace} och all data i det raderas.`, `Det sker ${dateIn('sv', when)}. Fram till dess kan alla ägare ångra under Inställningar, och exportera det som ska sparas.`, 'Om du inte känner igen det här: ångra direkt och byt lösenord.'],
+          button: 'Öppna inställningarna',
+          footer: 'Du får det här mejlet eftersom du är ägare av företaget.',
+        }
+      : {
+          subject: `${workspace} raderas inte`,
+          lines: [`${actor} har ångrat raderingen av ${workspace}. Ingenting tas bort.`],
+          button: 'Öppna inställningarna',
+          footer: 'Du får det här mejlet eftersom du är ägare av företaget.',
+        },
+  en: ({ kind, workspace, when, actor }) =>
+    kind === 'scheduled'
+      ? {
+          subject: `${workspace} will be deleted ${dateIn('en', when)}`,
+          lines: [`${actor} asked to delete ${workspace} and all its data.`, `This happens ${dateIn('en', when)}. Until then any owner can cancel under Settings, and export what should be kept.`, "If you don't recognise this: cancel right away and change your password."],
+          button: 'Open settings',
+          footer: 'You are receiving this email because you are an owner of the workspace.',
+        }
+      : {
+          subject: `${workspace} will not be deleted`,
+          lines: [`${actor} cancelled the deletion of ${workspace}. Nothing is removed.`],
+          button: 'Open settings',
+          footer: 'You are receiving this email because you are an owner of the workspace.',
+        },
+}
+
 const escape = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
@@ -97,6 +132,7 @@ export const emails = {
     render(resetPassword, locale, p, to, p.url),
   invitation: (to: string, locale: Locale, p: { inviter: string; workspace: string; role: Role; url: string }) =>
     render(invitation, locale, p, to, p.url),
+  workspaceDeletion: (to: string, locale: Locale, p: DeletionParams & { url: string }) => render(workspaceDeletion, locale, p, to, p.url),
   taskReminder: (
     to: string,
     locale: Locale,

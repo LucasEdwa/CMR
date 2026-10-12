@@ -7,6 +7,7 @@ import type { EmailMessage } from './email/templates.js'
 import { purgeRecord, usePurgeQueue, type PurgeJob } from './services/purge.js'
 import { sendTaskReminder, useReminderQueue, type ReminderJob } from './services/tasks.js'
 import { runImport, useImportQueue, type ImportJob } from './services/imports.js'
+import { deleteIfDue, useWorkspaceDeleteQueue, type WorkspaceDeleteJob } from './services/workspaceDeletion.js'
 
 // Runs inside the API process when RUN_WORKER=true. Split into its own service when load needs it.
 export async function startWorker() {
@@ -41,6 +42,12 @@ export async function startWorker() {
     for (const job of jobs) await runImport(job.data)
   })
   useImportQueue(boss)
+
+  // Workspace deletions after their grace period; the job re-checks that nobody cancelled.
+  await boss.work<WorkspaceDeleteJob>(QUEUES.workspaceDelete, async (jobs) => {
+    for (const job of jobs) await deleteIfDue(job.data)
+  })
+  useWorkspaceDeleteQueue(boss)
 
   return boss
 }

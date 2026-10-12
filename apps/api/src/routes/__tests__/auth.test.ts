@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../../app.js'
+import { db } from '../../db/client.js'
+import { verifications } from '../../db/schema.js'
 import { TestClient, lastLinkTo, signUpVerified, tokenFrom, uniqueEmail } from '../../test/client.js'
 
 let app: FastifyInstance
@@ -115,12 +117,18 @@ describe('password reset', () => {
     expect(request.statusCode).toBe(200)
 
     const token = tokenFrom(lastLinkTo(email))
+    // Only a hash of the token is stored.
+    const stored = await db.select({ identifier: verifications.identifier }).from(verifications)
+    expect(stored.some((v) => v.identifier.includes(token))).toBe(false)
+
     const reset = await browserB.post('/api/auth/reset-password', { token, newPassword: 'BrandNew456!' })
     expect(reset.statusCode).toBe(200)
 
     expect((await browserA.get('/api/me')).statusCode).toBe(401)
     expect((await browserB.post('/api/auth/sign-in/email', { email, password })).statusCode).toBe(401)
     await browserB.login(email, 'BrandNew456!')
+    const events = (await browserB.get('/api/me/security-events')).json() as Array<{ type: string }>
+    expect(events.map((e) => e.type)).toContain('password_changed')
   })
 
   it('answers the same for unknown emails (no account enumeration)', async () => {

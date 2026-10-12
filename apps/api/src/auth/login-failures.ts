@@ -22,6 +22,17 @@ export async function isLockedOut(ip: string, email: string): Promise<boolean> {
   return mine >= MAX_FAILURES || all >= MAX_FAILURES_ANY_IP
 }
 
+// Wrong 2FA codes, counted per account from any IP: Better Auth's own limit is per IP only, and a
+// six-digit code must not be guessable by someone who already has the password.
+export const MAX_TWO_FACTOR_FAILURES = 10
+const twoFactorKey = (userId: string) => `2fa|${userId}`
+
+export const isTwoFactorLockedOut = async (userId: string) => (await count(twoFactorKey(userId))) >= MAX_TWO_FACTOR_FAILURES
+export const recordTwoFactorFailure = (userId: string) => bump(twoFactorKey(userId))
+export const clearTwoFactorFailures = async (userId: string) => {
+  await db.delete(loginFailures).where(eq(loginFailures.key, twoFactorKey(userId)))
+}
+
 export async function recordFailure(ip: string, email: string) {
   await bump(keyOf(ip, email))
   await bump(anyIpKey(email))

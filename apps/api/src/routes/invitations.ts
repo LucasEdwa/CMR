@@ -28,6 +28,8 @@ import { HttpError } from '../errors.js'
 import { setActiveWorkspace } from './workspaces.js'
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+// Invitations are emails from our domain: cap them per workspace per day, on top of the hourly limit.
+export const MAX_INVITES_PER_DAY = 100
 
 // The link token is "<tenantId>.<secret>". The tenant id lets us set RLS context without a
 // privileged lookup; only sha256(secret) is stored, so a database leak exposes no usable links.
@@ -95,6 +97,13 @@ export async function invitationRoutes(app: FastifyInstance) {
       const existingUser = await findUserByEmail(input.email)
 
       const { id, workspaceName } = await withTenant(ctx, async (tx) => {
+        const [today] = await tx
+          .select({ n: sql<number>`count(*)::int` })
+          .from(invitations)
+          .where(gt(invitations.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)))
+        if (today!.n >= MAX_INVITES_PER_DAY) {
+          throw new HttpError(429, 'rate_limited', 'Too many invitations today. Try again tomorrow.')
+        }
         if (existingUser) {
           const [member] = await tx.select().from(memberships).where(eq(memberships.userId, existingUser.id))
           if (member) throw new HttpError(409, 'already_member', 'This person is already a member')

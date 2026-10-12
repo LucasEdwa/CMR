@@ -3,7 +3,9 @@ import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { plainToRichDoc, type AuditEntry, type Dashboard } from '@crm/shared'
 import { buildApp } from '../../app.js'
-import { deals } from '../../db/schema.js'
+import { deals, tenants } from '../../db/schema.js'
+import { outbox } from '../../email/send.js'
+import { deleteIfDue } from '../../services/workspaceDeletion.js'
 import { TestClient, addMember, createWorkspace, signUpVerified } from '../../test/client.js'
 import { asSystemIn } from '../../test/factories.js'
 
@@ -163,17 +165,42 @@ describe('people in several workspaces', () => {
 })
 
 describe('deleting the workspace', () => {
-  it('needs the owner and the workspace name, then erases it', async () => {
-    const { owner, ws } = await setup('Raderas AB')
+  it('needs the owner, the name and the password, then waits 7 days so any owner can cancel', async () => {
+    const owner = new TestClient(app)
+    const { password } = await signUpVerified(owner, 'Olga Owner')
+    const ws = await createWorkspace(owner, 'Raderas AB')
     const adam = await addMember(app, owner, 'admin', 'Adam')
-    await ok(owner.post('/api/contacts', { firstName: 'Borta' }), 201)
-    expect((await adam.client.request('DELETE', '/api/workspace', { confirm: 'Raderas AB' })).statusCode).toBe(403)
-    expect((await owner.request('DELETE', '/api/workspace', { confirm: 'Fel namn' })).statusCode).toBe(400)
-    await ok(owner.request('DELETE', '/api/workspace', { confirm: 'raderas ab' }))
+    await ok(owner.post('/api/contacts', { firstName: 'Kvar' }), 201)
+    expect((await adam.client.request('DELETE', '/api/workspace', { confirm: 'Raderas AB', password: 'Secret123!' })).statusCode).toBe(403)
+    expect((await owner.request('DELETE', '/api/workspace', { confirm: 'Fel namn', password })).statusCode).toBe(400)
+    const wrong = await owner.request('DELETE', '/api/workspace', { confirm: 'Raderas AB', password: 'fel-lösenord-123' })
+    expect(wrong.statusCode).toBe(403)
+    expect(wrong.json().error.code).toBe('INVALID_PASSWORD')
 
+    const before = outbox.length
+    const scheduled = await ok(owner.request('DELETE', '/api/workspace', { confirm: 'raderas ab', password }))
+    const days = (Date.parse(scheduled.deletionScheduledFor) - Date.now()) / 86_400_000
+    expect(days).toBeGreaterThan(6.9)
+    expect(outbox.slice(before).map((m) => m.subject)).toEqual([expect.stringMatching(/^Raderas AB raderas /)])
+    // Nothing is gone yet: everyone keeps working (and can export).
+    expect((await ok(adam.client.get('/api/contacts'))).total).toBe(1)
+    expect(await deleteIfDue({ tenantId: ws.id, userId: (await owner.get('/api/me')).json().user.id })).toBe(false)
+
+    await ok(owner.post('/api/workspace/cancel-deletion'))
+    expect((await ok(owner.get('/api/workspace'))).deletionScheduledFor).toBeNull()
+    expect((await owner.post('/api/workspace/cancel-deletion')).statusCode).toBe(409)
+  })
+
+  it('the job erases the workspace once the grace period is over', async () => {
+    const owner = new TestClient(app)
+    const { password } = await signUpVerified(owner, 'Olga Owner')
+    const ws = await createWorkspace(owner, 'Snart borta AB')
+    const ownerId = (await owner.get('/api/me')).json().user.id
+    await ok(owner.request('DELETE', '/api/workspace', { confirm: 'Snart borta AB', password }))
+    await asSystemIn(ws.id, (tx) => tx.update(tenants).set({ deletionScheduledFor: new Date(Date.now() - 1000) }).where(eq(tenants.id, ws.id)))
+    expect(await deleteIfDue({ tenantId: ws.id, userId: ownerId })).toBe(true)
     const me = await ok(owner.get('/api/me'))
     expect(me.workspaces.map((w: { id: string }) => w.id)).not.toContain(ws.id)
     expect(me.activeWorkspaceId).toBeNull()
-    expect((await adam.client.get('/api/contacts')).statusCode).toBe(403)
   })
 })

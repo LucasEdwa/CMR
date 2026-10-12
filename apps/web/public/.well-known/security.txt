@@ -1,0 +1,7 @@
+# How to report a security problem (RFC 9116).
+# Before go-live: replace the contact with a monitored address on the production domain,
+# set Canonical to the production URL and renew Expires at least yearly.
+Contact: mailto:security@example.invalid
+Expires: 2027-10-12T00:00:00.000Z
+Preferred-Languages: sv, en
+Canonical: https://example.invalid/.well-known/security.txt
