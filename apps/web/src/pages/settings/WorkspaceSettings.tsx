@@ -102,6 +102,13 @@ export function WorkspaceSettings() {
             <span className="text-muted-foreground block">{t('settings.ownRecordsOnlyHint')}</span>
           </span>
         </label>
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1" {...form.register('requireTwoFactor')} />
+          <span>
+            <span className="font-medium">{t('settings.requireTwoFactor')}</span>
+            <span className="text-muted-foreground block">{t('settings.requireTwoFactorHint')}</span>
+          </span>
+        </label>
         {canManage && (
           <Button type="submit" className="justify-self-start" disabled={isSubmitting || save.isPending || !isDirty}>
             {t('common.save')}

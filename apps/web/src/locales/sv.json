@@ -150,7 +150,9 @@
     "deleteWorkspaceConfirm": "All data raderas direkt och kan inte återställas. Exportera det du vill behålla först.",
     "typeName": "Skriv \"{{name}}\" för att bekräfta",
     "deleteForever": "Radera för alltid",
-    "deleted": "{{name}} är raderat"
+    "deleted": "{{name}} är raderat",
+    "requireTwoFactor": "Kräv tvåstegsinloggning för alla",
+    "requireTwoFactorHint": "Användare utan tvåstegsinloggning måste slå på det innan de kommer åt företaget. Slå på det för dig själv först."
   },
   "status": {
     "title": "Systemstatus",
@@ -194,7 +196,14 @@
     "invalid_contact": "Kontakten finns inte.",
     "invalid_money": "Ange ett belopp, till exempel 1 999,50.",
     "PASSWORD_COMPROMISED": "Det lösenordet har läckt vid ett dataintrång någon annanstans. Välj ett annat.",
-    "password_check_unavailable": "Lösenordet kunde inte kontrolleras just nu. Försök igen om en stund."
+    "password_check_unavailable": "Lösenordet kunde inte kontrolleras just nu. Försök igen om en stund.",
+    "two_factor_required": "Företaget kräver tvåstegsinloggning.",
+    "two_factor_needed_first": "Slå på tvåstegsinloggning för dig själv först, under Min profil.",
+    "INVALID_CODE": "Fel kod. Kontrollera att klockan i telefonen stämmer och försök igen.",
+    "INVALID_BACKUP_CODE": "Reservkoden stämmer inte eller har redan använts.",
+    "INVALID_PASSWORD": "Fel lösenord.",
+    "ACCOUNT_TEMPORARILY_LOCKED": "För många felaktiga koder. Vänta en stund och försök igen.",
+    "INVALID_TWO_FACTOR_COOKIE": "Inloggningen har gått ut. Logga in igen."
   },
   "notFound": {
     "title": "Sidan finns inte",
@@ -947,6 +956,60 @@
       "completedAt": "Klar",
       "pinned": "Fäst",
       "subject": "Ämne"
+    }
+  },
+  "security": {
+    "passwordTitle": "Lösenord",
+    "currentPassword": "Nuvarande lösenord",
+    "newPassword": "Nytt lösenord",
+    "passwordOthersOut": "Alla andra inloggade enheter loggas ut när du byter lösenord.",
+    "changePassword": "Byt lösenord",
+    "passwordChanged": "Lösenordet är bytt",
+    "twoFactorTitle": "Tvåstegsinloggning",
+    "status": "Status:",
+    "on": "På",
+    "off": "Av",
+    "turnOn": "Slå på tvåstegsinloggning",
+    "turnOff": "Stäng av",
+    "enabled": "Tvåstegsinloggning är påslagen",
+    "disabled": "Tvåstegsinloggning är avstängd",
+    "intro": "Efter lösenordet anger du en kod från en app i telefonen, till exempel Google Authenticator, Microsoft Authenticator eller 1Password. Börja med att bekräfta ditt lösenord.",
+    "start": "Fortsätt",
+    "scan": "Skanna koden med appen och skriv sedan in koden som appen visar.",
+    "qrAlt": "QR-kod för appen",
+    "manualKey": "Kan du inte skanna? Skriv in nyckeln:",
+    "codeLabel": "Kod från appen (6 siffror)",
+    "confirm": "Bekräfta",
+    "backupIntro": "Spara reservkoderna på ett säkert ställe. Varje kod fungerar en gång om du inte har telefonen till hands. De visas bara nu.",
+    "backupCodes": "Reservkoder",
+    "backupFileTitle": "Reservkoder för tvåstegsinloggning (CRM). Varje kod fungerar en gång.",
+    "downloadCodes": "Ladda ner koderna",
+    "savedCodes": "Jag har sparat koderna",
+    "challengeTitle": "Tvåstegsinloggning",
+    "challengeApp": "Skriv in koden från appen i telefonen.",
+    "challengeBackup": "Skriv in en av dina reservkoder.",
+    "backupLabel": "Reservkod",
+    "verify": "Logga in",
+    "useBackup": "Använd en reservkod i stället",
+    "useApp": "Använd koden från appen i stället",
+    "requiredTitle": "Slå på tvåstegsinloggning",
+    "requiredBody": "Företaget kräver tvåstegsinloggning. Det tar en minut.",
+    "sessionsTitle": "Inloggade enheter",
+    "thisDevice": "Den här enheten",
+    "lastActive": "senast aktiv {{date}}",
+    "endSession": "Logga ut",
+    "endOthers": "Logga ut alla andra enheter",
+    "othersEnded": "Alla andra enheter är utloggade",
+    "logTitle": "Säkerhetslogg",
+    "logHint": "Inloggningar och ändringar av kontot. Ser du något du inte känner igen? Byt lösenord och logga ut alla andra enheter.",
+    "events": {
+      "login": "Inloggning",
+      "login_failed": "Misslyckad inloggning",
+      "logout": "Utloggning",
+      "password_changed": "Lösenordet byttes",
+      "two_factor_enabled": "Tvåstegsinloggning slogs på",
+      "two_factor_disabled": "Tvåstegsinloggning stängdes av",
+      "sessions_revoked": "Enheter loggades ut"
     }
   }
 }

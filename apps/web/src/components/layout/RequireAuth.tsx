@@ -24,6 +24,8 @@ export function RequireAuth({ needsWorkspace = true }: { needsWorkspace?: boolea
     return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />
   }
   if (me.isError) throw me.error
+  // The workspace requires two-factor login: nothing else opens until it is set up.
+  if (me.data.twoFactorSetupRequired && location.pathname !== '/setup-2fa') return <Navigate to="/setup-2fa" replace />
   if (needsWorkspace && !me.data.activeWorkspaceId) return <Navigate to="/onboarding" replace />
   return <Outlet />
 }

@@ -150,7 +150,9 @@
     "deleteWorkspaceConfirm": "All data is deleted right away and cannot be recovered. Export what you want to keep first.",
     "typeName": "Type \"{{name}}\" to confirm",
     "deleteForever": "Delete forever",
-    "deleted": "{{name}} has been deleted"
+    "deleted": "{{name}} has been deleted",
+    "requireTwoFactor": "Require two-factor login for everyone",
+    "requireTwoFactorHint": "Users without two-factor login must turn it on before they can use the workspace. Turn it on for yourself first."
   },
   "status": {
     "title": "System status",
@@ -194,7 +196,14 @@
     "invalid_contact": "The contact doesn't exist.",
     "invalid_money": "Enter an amount, for example 1,999.50.",
     "PASSWORD_COMPROMISED": "That password has leaked in a data breach elsewhere. Choose another one.",
-    "password_check_unavailable": "The password could not be checked right now. Try again in a moment."
+    "password_check_unavailable": "The password could not be checked right now. Try again in a moment.",
+    "two_factor_required": "This workspace requires two-factor login.",
+    "two_factor_needed_first": "Turn on two-factor login for yourself first, under My profile.",
+    "INVALID_CODE": "Wrong code. Check that the phone clock is right and try again.",
+    "INVALID_BACKUP_CODE": "The backup code is wrong or has already been used.",
+    "INVALID_PASSWORD": "Wrong password.",
+    "ACCOUNT_TEMPORARILY_LOCKED": "Too many wrong codes. Wait a while and try again.",
+    "INVALID_TWO_FACTOR_COOKIE": "The login has expired. Log in again."
   },
   "notFound": {
     "title": "Page not found",
@@ -947,6 +956,60 @@
       "completedAt": "Done",
       "pinned": "Pinned",
       "subject": "Subject"
+    }
+  },
+  "security": {
+    "passwordTitle": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "passwordOthersOut": "All other logged-in devices are logged out when you change your password.",
+    "changePassword": "Change password",
+    "passwordChanged": "Password changed",
+    "twoFactorTitle": "Two-factor login",
+    "status": "Status:",
+    "on": "On",
+    "off": "Off",
+    "turnOn": "Turn on two-factor login",
+    "turnOff": "Turn off",
+    "enabled": "Two-factor login is on",
+    "disabled": "Two-factor login is off",
+    "intro": "After your password you enter a code from an app on your phone, such as Google Authenticator, Microsoft Authenticator or 1Password. Start by confirming your password.",
+    "start": "Continue",
+    "scan": "Scan the code with the app, then type in the code the app shows.",
+    "qrAlt": "QR code for the app",
+    "manualKey": "Can't scan? Type in the key:",
+    "codeLabel": "Code from the app (6 digits)",
+    "confirm": "Confirm",
+    "backupIntro": "Keep the backup codes somewhere safe. Each code works once if you do not have your phone. They are only shown now.",
+    "backupCodes": "Backup codes",
+    "backupFileTitle": "Backup codes for two-factor login (CRM). Each code works once.",
+    "downloadCodes": "Download the codes",
+    "savedCodes": "I have saved the codes",
+    "challengeTitle": "Two-factor login",
+    "challengeApp": "Enter the code from the app on your phone.",
+    "challengeBackup": "Enter one of your backup codes.",
+    "backupLabel": "Backup code",
+    "verify": "Log in",
+    "useBackup": "Use a backup code instead",
+    "useApp": "Use the code from the app instead",
+    "requiredTitle": "Turn on two-factor login",
+    "requiredBody": "This workspace requires two-factor login. It takes a minute.",
+    "sessionsTitle": "Logged-in devices",
+    "thisDevice": "This device",
+    "lastActive": "last active {{date}}",
+    "endSession": "Log out",
+    "endOthers": "Log out all other devices",
+    "othersEnded": "All other devices are logged out",
+    "logTitle": "Security log",
+    "logHint": "Logins and account changes. See something you don't recognise? Change your password and log out all other devices.",
+    "events": {
+      "login": "Login",
+      "login_failed": "Failed login",
+      "logout": "Logout",
+      "password_changed": "Password changed",
+      "two_factor_enabled": "Two-factor login turned on",
+      "two_factor_disabled": "Two-factor login turned off",
+      "sessions_revoked": "Devices logged out"
     }
   }
 }

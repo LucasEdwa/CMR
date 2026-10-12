@@ -17,7 +17,7 @@ initSentry()
 // The "me" query itself is skipped: its own 401 is how the guards learn the user is logged out.
 const onAccessLost = (err: unknown, queryKey?: readonly unknown[]) => {
   if (queryKey?.[0] === ME_KEY[0]) return
-  if (err instanceof ApiRequestError && (err.status === 401 || err.code === 'no_workspace')) {
+  if (err instanceof ApiRequestError && (err.status === 401 || err.code === 'no_workspace' || err.code === 'two_factor_required')) {
     void queryClient.invalidateQueries({ queryKey: ME_KEY })
   }
 }

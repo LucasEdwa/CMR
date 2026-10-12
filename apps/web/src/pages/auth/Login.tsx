@@ -26,7 +26,13 @@ export function Login() {
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null)
     try {
-      await authApi.signIn(values)
+      const result = await authApi.signIn(values)
+      if (result?.twoFactorRedirect) {
+        // Password was right; the code from the authenticator app comes next.
+        const next = params.get('next')
+        navigate(`/login/2fa${next ? `?next=${encodeURIComponent(next)}` : ''}`, { replace: true })
+        return
+      }
       await reset()
       navigate(safeNext(params.get('next')), { replace: true })
     } catch (err) {
