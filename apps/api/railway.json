@@ -1,0 +1,13 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @crm/api build"
+  },
+  "deploy": {
+    "preDeployCommand": "node apps/api/dist/db/migrate.js",
+    "startCommand": "pnpm --filter @crm/api start",
+    "healthcheckPath": "/api/health",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
