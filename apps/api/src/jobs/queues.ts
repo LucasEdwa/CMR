@@ -3,6 +3,8 @@
 export const QUEUES = {
   // Sprint 0: proves jobs run end to end with tenant context.
   ping: 'system.ping',
+  // Transactional email. Not tenant-scoped: signup and password reset happen outside a workspace.
+  email: 'email.send',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]
