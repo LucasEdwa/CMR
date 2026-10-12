@@ -1,9 +1,10 @@
-import { count, sql } from 'drizzle-orm'
-import { CONSENT_BASES, LEAD_SOURCES, LIFECYCLE_STAGES, COMPANY_SIZES } from '@crm/shared'
+import { asc, count, eq, sql } from 'drizzle-orm'
+import { CONSENT_BASES, DEFAULT_PICKLISTS, LEAD_SOURCES, LIFECYCLE_STAGES, COMPANY_SIZES } from '@crm/shared'
 import type { Tx } from '../db/client.js'
-import { companies, contacts, contactTags, companyTags, tags } from '../db/schema.js'
+import { companies, contacts, contactTags, companyTags, dealContacts, dealStageHistory, deals, pipelineStages, tags } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { buildSearchText } from '../services/common.js'
+import { ensureDefaultPipeline } from '../services/pipelines.js'
 
 // Deterministic pseudo-random numbers, so every seed run produces the same data.
 function rng(seed: number) {
@@ -18,6 +19,7 @@ const pick = <T>(r: () => number, items: readonly T[]) => items[Math.floor(r() *
 const FIRST = ['Anna', 'Björn', 'Åsa', 'Örjan', 'Märta', 'Erik', 'Karin', 'Lars', 'Sofia', 'Johan', 'Maja', 'Oskar', 'Elin', 'Gustav', 'Ingrid', 'Nils', 'Linnéa', 'Pär', 'Ebba', 'Mattias', 'Saga', 'Viktor', 'Ylva', 'Håkan']
 const LAST = ['Andersson', 'Johansson', 'Karlsson', 'Nilsson', 'Eriksson', 'Ödman', 'Ångström', 'Björklund', 'Lindqvist', 'Bergström', 'Sjöberg', 'Wallin', 'Holm', 'Åberg', 'Lundgren', 'Ekström', 'Hägg', 'Nyström', 'Söderberg', 'Fransson']
 const COMPANY_WORDS = ['Nordlund', 'Fjällräv', 'Sjövik', 'Granskog', 'Älvdal', 'Stenhög', 'Björkvik', 'Solhem', 'Ekbacken', 'Lövånger', 'Havsbris', 'Kvarnen', 'Ängsgård', 'Vinterviken', 'Brofästet']
+// Used in generated company names.
 const COMPANY_TYPES = ['Bygg', 'Konsult', 'Logistik', 'Data', 'Fastigheter', 'Design', 'Teknik', 'Handel']
 const CITIES = ['Stockholm', 'Göteborg', 'Malmö', 'Uppsala', 'Västerås', 'Örebro', 'Linköping', 'Umeå', 'Luleå', 'Jönköping']
 const TITLES = ['VD', 'Inköpschef', 'Säljare', 'Ekonomichef', 'IT-chef', 'Marknadschef', 'Projektledare', null, null]
@@ -67,7 +69,7 @@ export async function seedCrm(
       orgNumber: org,
       vatNumber: `SE${org.replace('-', '')}01`,
       domain,
-      industry: pick(r, COMPANY_TYPES),
+      industry: pick(r, DEFAULT_PICKLISTS.industry),
       size: pick(r, COMPANY_SIZES),
       phone,
       city,
@@ -128,4 +130,67 @@ export async function seedCrm(
   }
   await tx.execute(sql`analyze contacts`)
   return { companies: companyRows.length, contacts: opts.contacts }
+}
+
+const DEAL_WORDS = ['Licenser', 'Ramavtal', 'Konsulttimmar', 'Support', 'Utbildning', 'Hårdvara', 'Molntjänst', 'Pilotprojekt', 'Förnyelse', 'Uppgradering']
+
+// Deals across the default pipeline: mostly open, some won and lost, two stale, and one worth
+// exactly 1 999,50 kr for the rounding check.
+export async function seedDeals(tx: Tx, ctx: TenantContext, opts: { count: number; ownerIds: string[]; seed: number }) {
+  const [existing] = await tx.select({ n: count() }).from(deals)
+  if (existing!.n > 0) return 0
+  const r = rng(opts.seed)
+  const pipeline = await ensureDefaultPipeline(tx, ctx)
+  const stages = await tx.select().from(pipelineStages).where(eq(pipelineStages.pipelineId, pipeline.id)).orderBy(asc(pipelineStages.position))
+  const companyRows = await tx.select({ id: companies.id, name: companies.name }).from(companies).limit(200)
+  const contactRows = await tx.select({ id: contacts.id, companyId: contacts.companyId }).from(contacts).limit(500)
+  const DAY = 86_400_000
+
+  for (let i = 0; i < opts.count; i++) {
+    const company = pick(r, companyRows)
+    const stage = pick(r, stages)
+    const roll = r()
+    const status = roll < 0.12 ? 'won' : roll < 0.22 ? 'lost' : 'open'
+    const stale = i < 2
+    const created = new Date(Date.now() - (stale ? 60 : Math.floor(r() * 50)) * DAY)
+    const lastActivity = stale ? new Date(Date.now() - (20 + i * 5) * DAY) : new Date(Date.now() - Math.floor(r() * 5) * DAY)
+    const name = i === 2 ? `Startpaket – ${company.name}` : stale ? `Gammal offert – ${company.name}` : `${pick(r, DEAL_WORDS)} – ${company.name}`
+    const value = i === 2 ? 199_950 : Math.round(5 + r() * 400) * 1_000_00
+    const closeIn = Math.floor(r() * 90) - 10
+    const [deal] = await tx
+      .insert(deals)
+      .values({
+        tenantId: ctx.tenantId,
+        name,
+        value,
+        pipelineId: pipeline.id,
+        stageId: stage.id,
+        position: i,
+        status,
+        lostReason: status === 'lost' ? pick(r, DEFAULT_PICKLISTS.lost_reason) : null,
+        closedAt: status === 'open' ? null : lastActivity,
+        expectedCloseDate: new Date(Date.now() + closeIn * DAY).toISOString().slice(0, 10),
+        companyId: company.id,
+        ownerUserId: pick(r, opts.ownerIds),
+        createdByUserId: ctx.userId,
+        searchText: buildSearchText([name]),
+        createdAt: created,
+        updatedAt: lastActivity,
+        lastActivityAt: lastActivity,
+        stageEnteredAt: lastActivity,
+      })
+      .returning({ id: deals.id })
+    const people = contactRows.filter((c) => c.companyId === company.id).slice(0, 2)
+    if (people.length) await tx.insert(dealContacts).values(people.map((p) => ({ tenantId: ctx.tenantId, dealId: deal!.id, contactId: p.id })))
+    await tx.insert(dealStageHistory).values({
+      tenantId: ctx.tenantId,
+      dealId: deal!.id,
+      stageId: stage.id,
+      stageName: stage.name,
+      pipelineName: pipeline.name,
+      enteredAt: lastActivity,
+      changedByUserId: ctx.userId,
+    })
+  }
+  return opts.count
 }

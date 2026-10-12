@@ -33,9 +33,9 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 | `pnpm test` | Unit and integration tests (API tests run against the `crm_test` database) |
 | `pnpm test:e2e` | Playwright, desktop and phone; starts the dev servers if they are not running |
 | `pnpm lint` / `pnpm typecheck` / `pnpm build` | What CI runs |
-| `pnpm seed` | Demo data: Acme AB (200 contacts, 30 companies) and Beta AB (10, 3). Safe to rerun |
+| `pnpm seed` | Demo data: Acme AB (200 contacts, 30 companies, 40 deals incl. two stale ones) and Beta AB (10, 3, 5). Safe to rerun |
 | `pnpm seed:large` | Adds "Stor Data AB" with 20 000 contacts for speed checks (Anna is owner) |
-| `pnpm seed:sample --email <you> [--workspace "Name AB"] [--contacts 50] [--companies 10]` | Adds sample contacts and companies to your own company |
+| `pnpm seed:sample --email <you> [--workspace "Name AB"] [--contacts 50] [--companies 10]` | Adds sample contacts and companies (and 15 deals if it has none) to your own company |
 | `pnpm db:generate --name <name>` | New migration from `apps/api/src/db/schema.ts` |
 | `pnpm db:migrate` | Apply migrations, set up pg-boss queues and grants |
 
