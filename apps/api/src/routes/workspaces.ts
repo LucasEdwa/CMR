@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify'
 import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
-import { createWorkspaceSchema, updateWorkspaceSchema, workspaceSchema, type Workspace } from '@crm/shared'
+import { createWorkspaceSchema, deleteWorkspaceSchema, updateWorkspaceSchema, workspaceSchema, type Workspace } from '@crm/shared'
 import { z } from 'zod'
-import { MANAGERS, inWorkspace, requireTenant, requireUser } from '../auth/context.js'
+import { MANAGERS, OWNERS, inWorkspace, requireTenant, requireUser } from '../auth/context.js'
 import { audit } from '../db/audit.js'
 import { db } from '../db/client.js'
 import { memberships, sessions, tenants } from '../db/schema.js'
@@ -80,5 +80,21 @@ export async function workspaceRoutes(app: FastifyInstance) {
       return after!
     })
     return toWorkspace(tenant)
+  })
+
+  // Erases the workspace and everything in it. The name must be typed again to confirm.
+  app.delete('/workspace', { preHandler: inWorkspace(OWNERS) }, async (request) => {
+    const ctx = requireTenant(request, OWNERS)
+    const { confirm } = deleteWorkspaceSchema.parse(request.body)
+    await withTenant(ctx, async (tx) => {
+      const [tenant] = await tx.select().from(tenants).where(eq(tenants.id, ctx.tenantId))
+      if (!tenant || tenant.name.trim().toLowerCase() !== confirm.toLowerCase()) {
+        throw new HttpError(400, 'confirm_mismatch', 'Type the workspace name to confirm')
+      }
+      // Cascades to every table; sessions pointing at it fall back to another workspace.
+      await tx.delete(tenants).where(eq(tenants.id, ctx.tenantId))
+    })
+    request.log.info({ tenantId: ctx.tenantId, userId: ctx.userId }, 'workspace deleted')
+    return { ok: true }
   })
 }

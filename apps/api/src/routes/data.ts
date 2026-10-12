@@ -9,13 +9,17 @@ import {
   contactListQuerySchema,
   createImportSchema,
   dealListQuerySchema,
+  auditQuerySchema,
+  dashboardQuerySchema,
   mergeContactsSchema,
   recordRefSchema,
 } from '@crm/shared'
-import { WRITERS, inWorkspace, requireTenant } from '../auth/context.js'
+import { MANAGERS, WRITERS, inWorkspace, requireTenant } from '../auth/context.js'
 import type { Tx } from '../db/client.js'
 import { withTenant } from '../db/tenant.js'
+import { listAudit } from '../services/auditLog.js'
 import { bulkCompanies, bulkContacts, bulkDeals } from '../services/bulk.js'
+import { getDashboard } from '../services/dashboard.js'
 import { listCompanies } from '../services/companies.js'
 import { listContacts } from '../services/contacts.js'
 import { listDeals } from '../services/deals.js'
@@ -41,6 +45,20 @@ async function exportAll<T>(list: (page: number, pageSize: number) => Promise<{ 
 }
 
 export async function dataRoutes(app: FastifyInstance) {
+  // ---- dashboard (every role; RLS limits it to what the caller may see) ----
+  app.get('/dashboard', { preHandler: inWorkspace() }, async (request) => {
+    const ctx = requireTenant(request)
+    const query = dashboardQuerySchema.parse(request.query)
+    return withTenant(ctx, (tx) => getDashboard(tx, ctx, query))
+  })
+
+  // ---- audit log (owners and admins) ----
+  app.get('/audit', { preHandler: inWorkspace(MANAGERS) }, async (request) => {
+    const ctx = requireTenant(request, MANAGERS)
+    const query = auditQuerySchema.parse(request.query)
+    return withTenant(ctx, (tx) => listAudit(tx, ctx, query))
+  })
+
   // ---- import ----
   app.post(
     '/imports',
