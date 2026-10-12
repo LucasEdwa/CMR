@@ -169,6 +169,13 @@
       "when": 1791836116067,
       "tag": "0023_workspace_deletion_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791838973806,
+      "tag": "0024_redact_erased_audit",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,7 @@ import type { PgBoss } from 'pg-boss'
 import { TRASH_RETENTION_DAYS } from '@crm/shared'
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
-import { activities, activityLinks, companies, contacts, deals } from '../db/schema.js'
+import { activities, activityLinks, companies, contacts, deals, tasks } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { QUEUES, type TenantJob } from '../jobs/queues.js'
 
@@ -45,18 +45,31 @@ export async function purgeRecord(tx: Tx, job: PurgeJob) {
   }
   const linkColumn = { contact: activityLinks.contactId, company: activityLinks.companyId, deal: activityLinks.dealId }[job.type]
   const linked = (await tx.select({ id: activityLinks.activityId }).from(activityLinks).where(eq(linkColumn, job.id))).map((l) => l.id)
+  const taskColumn = { contact: tasks.contactId, company: tasks.companyId, deal: tasks.dealId }[job.type]
+  const taskIds = (await tx.select({ id: tasks.id }).from(tasks).where(eq(taskColumn, job.id))).map((t) => t.id)
   // Tasks and activity links go with the record (ON DELETE CASCADE).
   const [gone] = await tx
     .delete(table)
     .where(and(eq(table.id, job.id), lt(table.deletedAt, cutoff)))
     .returning({ id: table.id })
+  let erasedActivities: string[] = []
   if (gone && linked.length) {
     // Activities that were only on this record have nowhere left to show: erase them too.
-    await tx
-      .delete(activities)
-      .where(and(inArray(activities.id, linked), sql`not exists (select 1 from ${activityLinks} where ${activityLinks.activityId} = ${activities.id})`))
+    erasedActivities = (
+      await tx
+        .delete(activities)
+        .where(and(inArray(activities.id, linked), sql`not exists (select 1 from ${activityLinks} where ${activityLinks.activityId} = ${activities.id})`))
+        .returning({ id: activities.id })
+    ).map((a) => a.id)
   }
   if (gone) {
+    // The old values in the audit log are personal data too: clear them, keep the events.
+    const erased = [
+      { type: job.type, id: job.id },
+      ...erasedActivities.map((id) => ({ type: 'activity', id })),
+      ...taskIds.map((id) => ({ type: 'task', id })),
+    ]
+    for (const e of erased) await tx.execute(sql`select app_redact_erased_audit(${e.type}, ${e.id}::uuid)`)
     await audit(tx, { tenantId: job.tenantId, userId: job.userId, role: 'system' }, {
       action: 'purge',
       entityType: job.type,

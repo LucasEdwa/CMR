@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { eq, sql } from 'drizzle-orm'
 import { plainToRichDoc, type Activity, type MyTasks, type RichDoc, type Task } from '@crm/shared'
 import { buildApp } from '../../app.js'
-import { activities, contacts, deals, tasks } from '../../db/schema.js'
+import { activities, auditLog, contacts, deals, tasks } from '../../db/schema.js'
 import { withTenant } from '../../db/tenant.js'
 import { asSystemIn } from '../../test/factories.js'
 import { outbox } from '../../email/send.js'
@@ -391,12 +391,30 @@ describe('erasing records', () => {
   it('erases an activity whose only record is erased', async () => {
     const { owner, ownerId, ws, company } = await setup()
     const solo = await expectStatus(owner.post('/api/contacts', { firstName: 'Ensam' }), 201)
-    await expectStatus(owner.post('/api/activities', { type: 'note', record: { type: 'contact', id: solo.id }, body: note('Försvinner') }), 201)
+    const gone = await expectStatus(owner.post('/api/activities', { type: 'note', record: { type: 'contact', id: solo.id }, body: note('Försvinner') }), 201)
     await expectStatus(owner.delete(`/api/contacts/${solo.id}`), 200)
     const ctx = { tenantId: ws.id, userId: ownerId, role: 'owner' as const }
     await withTenant(ctx, (tx) => tx.update(contacts).set({ deletedAt: sql`now() - interval '31 days'` }).where(eq(contacts.id, solo.id)))
     await withTenant(ctx, (tx) => purgeRecord(tx, { tenantId: ws.id, userId: ownerId, type: 'contact', id: solo.id }))
     expect((await timeline(owner, 'company', company.id)).items).toEqual([])
     expect(await withTenant(ctx, (tx) => tx.select().from(activities))).toEqual([])
+
+    // The audit log keeps who did what and when, but none of the erased values.
+    const log = await withTenant(ctx, (tx) => tx.select({ action: auditLog.action, entityId: auditLog.entityId, diff: auditLog.diff }).from(auditLog))
+    const about = log.filter((e) => [solo.id, gone.id].includes(e.entityId) && e.action !== 'purge')
+    expect(about.map((e) => e.action)).toEqual(expect.arrayContaining(['create', 'delete']))
+    expect(about.filter((e) => e.diff !== null)).toEqual([])
+    expect(JSON.stringify(log)).not.toContain('Ensam')
+    expect(JSON.stringify(log)).not.toContain('Försvinner')
+  })
+
+  it('never clears the audit values of a record that still exists', async () => {
+    const { owner, ownerId, ws } = await setup()
+    const kept = await expectStatus(owner.post('/api/contacts', { firstName: 'Kvar' }), 201)
+    const ctx = { tenantId: ws.id, userId: ownerId, role: 'owner' as const }
+    const [row] = await withTenant(ctx, (tx) => tx.execute<{ n: number }>(sql`select app_redact_erased_audit('contact', ${kept.id}::uuid) as n`))
+    expect(row!.n).toBe(0)
+    const log = await withTenant(ctx, (tx) => tx.select({ diff: auditLog.diff }).from(auditLog).where(eq(auditLog.entityId, kept.id)))
+    expect(JSON.stringify(log)).toContain('Kvar')
   })
 })
