@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { DetailList, RecordNotFound } from '@/components/records/DetailParts'
 import { useActiveWorkspace } from '@/hooks/useMe'
 import { ApiRequestError } from '@/lib/api'
 import { fullName, recordApi, useContact, useRecordMutation } from '@/lib/crm'
+import { dataApi } from '@/lib/data'
 import { errorMessage } from '@/lib/errors'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { ContactForm } from './ContactForm'
@@ -31,6 +32,12 @@ export function ContactDetail() {
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const remove = useRecordMutation(() => recordApi.deleteContact(id))
+
+  // For "recently viewed" in the search palette.
+  const loaded = contact.isSuccess
+  useEffect(() => {
+    if (loaded) void dataApi.viewed({ type: 'contact', id })
+  }, [loaded, id])
 
   if (contact.isPending) return <Skeleton className="mx-auto h-96 max-w-4xl" />
   if (contact.error instanceof ApiRequestError && contact.error.status === 404) return <RecordNotFound backTo="/contacts" />
