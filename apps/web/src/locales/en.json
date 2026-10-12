@@ -106,7 +106,8 @@
     "workspaces": "Companies",
     "contacts": "Contacts",
     "companies": "Companies",
-    "trash": "Trash"
+    "trash": "Trash",
+    "deals": "Deals"
   },
   "home": {
     "greeting": "Hi {{name}}!",
@@ -133,7 +134,9 @@
     "you": "you",
     "confirmRemove": "Remove {{name}} from {{workspace}}? They lose access immediately.",
     "leave": "Leave company",
-    "confirmLeave": "Leave {{workspace}}? You'll need a new invitation to come back."
+    "confirmLeave": "Leave {{workspace}}? You'll need a new invitation to come back.",
+    "pipelines": "Pipelines",
+    "picklists": "Lists"
   },
   "status": {
     "title": "System status",
@@ -167,7 +170,15 @@
     "invalid_domain": "Enter a domain, for example acme.se.",
     "invalid_company": "The company doesn't exist.",
     "invalid_owner": "The owner must be a member of the company.",
-    "not_found": "Not found."
+    "not_found": "Not found.",
+    "stage_has_deals": "The stage {{stage}} has deals. Move them first.",
+    "pipeline_has_deals": "The pipeline has deals. Move or delete them first.",
+    "last_pipeline": "There must be at least one pipeline.",
+    "deal_closed": "Reopen the deal before moving it.",
+    "invalid_lost_reason": "Choose a reason from the list.",
+    "invalid_stage": "The stage doesn't exist.",
+    "invalid_contact": "The contact doesn't exist.",
+    "invalid_money": "Enter an amount, for example 1,999.50."
   },
   "notFound": {
     "title": "Page not found",
@@ -295,14 +306,15 @@
   },
   "trash": {
     "title": "Trash",
-    "intro": "Deleted contacts and companies are kept here for 30 days, then erased for good.",
+    "intro": "Deleted contacts, companies and deals are kept here for 30 days, then erased for good.",
     "empty": "Trash is empty.",
     "deletedBy": "Deleted {{date}} by {{name}}",
     "deletedAt": "Deleted {{date}}",
     "purgeAt": "Erased {{date}}",
     "restored": "{{name}} restored",
     "contact": "Contact",
-    "company": "Company"
+    "company": "Company",
+    "deal": "Deal"
   },
   "tags": {
     "placeholder": "Add tag…",
@@ -313,5 +325,124 @@
     "searchCompany": "Search companies…",
     "noCompanies": "No companies found.",
     "choose": "Choose…"
+  },
+  "deals": {
+    "title": "Deals",
+    "new": "New deal",
+    "edit": "Edit deal",
+    "name": "Name",
+    "value": "Value",
+    "currency": "Currency",
+    "pipeline": "Pipeline",
+    "stage": "Stage",
+    "expectedClose": "Expected close",
+    "contacts": "Contacts",
+    "company": "Company",
+    "status": "Status",
+    "board": "Board",
+    "list": "List",
+    "probability": "Probability",
+    "statuses": {
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost"
+    },
+    "markWon": "Won",
+    "markLost": "Lost",
+    "reopen": "Reopen",
+    "lostTitle": "Mark as lost",
+    "lostReason": "Reason",
+    "lostNote": "Comment (optional)",
+    "chooseReason": "Choose a reason…",
+    "lostAs": "Lost: {{reason}}",
+    "wonToast": "Congratulations! The deal is won.",
+    "lostToast": "The deal is marked as lost",
+    "reopenedToast": "The deal is open again",
+    "stale": "Stale",
+    "staleFor": "No activity for {{days}} days",
+    "deals_one": "{{count}} deal",
+    "deals_other": "{{count}} deals",
+    "emptyColumn": "No deals",
+    "emptyBody": "Create your first deal.",
+    "history": "Stage history",
+    "inStage": "{{duration}} in stage",
+    "now": "now",
+    "movedTo": "Moved to {{stage}}",
+    "moveTo": "Move to stage",
+    "details": "Details",
+    "related": "Related",
+    "noContacts": "No contacts",
+    "confirmDelete": "Delete {{name}}? The deal moves to Trash and can be restored for 30 days.",
+    "deleted": "The deal stays in Trash for 30 days.",
+    "saved": "Deal saved",
+    "created": "Deal created",
+    "addContact": "Add contact",
+    "searchContacts": "Search contacts…",
+    "noContactsFound": "No contacts found.",
+    "closed": "Closed {{date}}",
+    "weighted": "Weighted {{value}}",
+    "dragHint": "Drag deals between stages. With the keyboard: space to pick up, arrows to move."
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "stages": "Stages",
+    "addStage": "Add stage",
+    "stageName": "Stage name",
+    "probability": "Probability %",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeStage": "Remove stage",
+    "save": "Save stages",
+    "saved": "Stages saved",
+    "newPipeline": "New pipeline",
+    "pipelineName": "Pipeline name",
+    "rename": "Rename",
+    "deletePipeline": "Delete pipeline",
+    "confirmDelete": "Delete the pipeline {{name}}?",
+    "staleDays": "Mark deals as stale after",
+    "days": "days",
+    "openDeals": "{{count}} open deals"
+  },
+  "picklistsPage": {
+    "title": "Lists",
+    "intro": "The values you can pick in forms. Changes do not affect what is already saved.",
+    "add": "Add",
+    "save": "Save",
+    "saved": "List saved",
+    "remove": "Remove",
+    "lead_source": "Sources",
+    "lost_reason": "Reasons for lost deals",
+    "industry": "Industries"
+  },
+  "picklists": {
+    "lead_source": {
+      "website": "Website",
+      "referral": "Referral",
+      "event": "Event",
+      "cold_outreach": "Outreach",
+      "social": "Social media",
+      "partner": "Partner",
+      "other": "Other"
+    },
+    "lost_reason": {
+      "price": "Price",
+      "competitor": "Chose a competitor",
+      "timing": "Wrong timing",
+      "no_budget": "No budget",
+      "no_response": "Stopped responding",
+      "other": "Other"
+    },
+    "industry": {
+      "it": "IT and tech",
+      "construction": "Construction",
+      "retail": "Retail",
+      "manufacturing": "Manufacturing",
+      "consulting": "Consulting",
+      "real_estate": "Real estate",
+      "transport": "Transport and logistics",
+      "healthcare": "Healthcare",
+      "education": "Education",
+      "other": "Other"
+    }
   }
 }

@@ -8,7 +8,9 @@ export function errorMessage(t: TFunction, err: unknown): string {
       const msg = (err.details[0] as { message?: string } | undefined)?.message
       if (msg && t(`errors.${msg}`, { defaultValue: '' })) return t(`errors.${msg}`)
     }
-    const known = t(`errors.${err.code}`, { defaultValue: '' })
+    // Details such as { stage, count } fill the placeholders in the message.
+    const vars = err.details && typeof err.details === 'object' && !Array.isArray(err.details) ? (err.details as Record<string, unknown>) : {}
+    const known = t(`errors.${err.code}`, { defaultValue: '', ...vars })
     if (known) return known
   }
   return t('errors.generic')

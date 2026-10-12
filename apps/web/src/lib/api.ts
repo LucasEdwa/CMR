@@ -47,6 +47,6 @@ export async function api<T>(path: string, schema: z.ZodType<T>, init?: RequestI
   return schema.parse(await request(path, init))
 }
 
-export function send(method: 'POST' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
+export function send(method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', path: string, body?: unknown): Promise<unknown> {
   return request(path, { method, body: body === undefined ? undefined : JSON.stringify(body) })
 }
