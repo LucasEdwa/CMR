@@ -1,0 +1,33 @@
+{
+  "app": {
+    "name": "CRM",
+    "tagline": "The foundation is in place. Features arrive sprint by sprint."
+  },
+  "language": {
+    "label": "Language",
+    "sv": "Svenska",
+    "en": "English"
+  },
+  "status": {
+    "title": "System status",
+    "api": "API",
+    "database": "Database",
+    "environment": "Environment",
+    "ok": "OK",
+    "down": "Down",
+    "checking": "Checking…",
+    "unreachable": "Cannot reach the API"
+  },
+  "formatting": {
+    "title": "Formatting",
+    "money": "Amount",
+    "date": "Date"
+  },
+  "debug": {
+    "throwError": "Throw test error (Sentry)"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to start"
+  }
+}

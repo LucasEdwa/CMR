@@ -1,0 +1,33 @@
+{
+  "app": {
+    "name": "CRM",
+    "tagline": "Grunden är på plats. Funktionerna kommer sprint för sprint."
+  },
+  "language": {
+    "label": "Språk",
+    "sv": "Svenska",
+    "en": "English"
+  },
+  "status": {
+    "title": "Systemstatus",
+    "api": "API",
+    "database": "Databas",
+    "environment": "Miljö",
+    "ok": "OK",
+    "down": "Nere",
+    "checking": "Kontrollerar…",
+    "unreachable": "Når inte API:t"
+  },
+  "formatting": {
+    "title": "Format",
+    "money": "Belopp",
+    "date": "Datum"
+  },
+  "debug": {
+    "throwError": "Kasta testfel (Sentry)"
+  },
+  "notFound": {
+    "title": "Sidan finns inte",
+    "back": "Till startsidan"
+  }
+}
