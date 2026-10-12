@@ -180,7 +180,7 @@ test('lists, detail pages and the board have no horizontal page scroll on a phon
   await loginAs(page, users.anna.email)
   const deals = await (await page.request.get('/api/deals?status=open&pageSize=25')).json()
   const contacts = await (await page.request.get('/api/contacts?pageSize=25')).json()
-  for (const path of ['/contacts', '/companies', '/deals', `/deals/${deals.items[0].id}`, `/contacts/${contacts.items[0].id}`, '/settings/pipelines', '/tasks', '/import', '/contacts/duplicates']) {
+  for (const path of ['/', '/settings/audit', '/contacts', '/companies', '/deals', `/deals/${deals.items[0].id}`, `/contacts/${contacts.items[0].id}`, '/settings/pipelines', '/tasks', '/import', '/contacts/duplicates']) {
     await page.goto(path)
     await page.waitForLoadState('networkidle')
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
