@@ -106,7 +106,8 @@
     "workspaces": "Företag",
     "contacts": "Kontakter",
     "companies": "Företag",
-    "trash": "Papperskorg"
+    "trash": "Papperskorg",
+    "deals": "Affärer"
   },
   "home": {
     "greeting": "Hej {{name}}!",
@@ -133,7 +134,9 @@
     "you": "du",
     "confirmRemove": "Ta bort {{name}} från {{workspace}}? Personen förlorar åtkomst direkt.",
     "leave": "Lämna företaget",
-    "confirmLeave": "Lämna {{workspace}}? Du behöver en ny inbjudan för att komma tillbaka."
+    "confirmLeave": "Lämna {{workspace}}? Du behöver en ny inbjudan för att komma tillbaka.",
+    "pipelines": "Pipelines",
+    "picklists": "Listor"
   },
   "status": {
     "title": "Systemstatus",
@@ -167,7 +170,15 @@
     "invalid_domain": "Ange en domän, till exempel acme.se.",
     "invalid_company": "Företaget finns inte.",
     "invalid_owner": "Ägaren måste vara med i företaget.",
-    "not_found": "Hittades inte."
+    "not_found": "Hittades inte.",
+    "stage_has_deals": "Steget {{stage}} har affärer. Flytta dem först.",
+    "pipeline_has_deals": "Pipelinen har affärer. Flytta eller ta bort dem först.",
+    "last_pipeline": "Det måste finnas minst en pipeline.",
+    "deal_closed": "Öppna affären igen innan du flyttar den.",
+    "invalid_lost_reason": "Välj en anledning i listan.",
+    "invalid_stage": "Steget finns inte.",
+    "invalid_contact": "Kontakten finns inte.",
+    "invalid_money": "Ange ett belopp, till exempel 1 999,50."
   },
   "notFound": {
     "title": "Sidan finns inte",
@@ -295,14 +306,15 @@
   },
   "trash": {
     "title": "Papperskorg",
-    "intro": "Borttagna kontakter och företag sparas här i 30 dagar och raderas sedan för gott.",
+    "intro": "Borttagna kontakter, företag och affärer sparas här i 30 dagar och raderas sedan för gott.",
     "empty": "Papperskorgen är tom.",
     "deletedBy": "Borttagen {{date}} av {{name}}",
     "deletedAt": "Borttagen {{date}}",
     "purgeAt": "Raderas {{date}}",
     "restored": "{{name}} är återställd",
     "contact": "Kontakt",
-    "company": "Företag"
+    "company": "Företag",
+    "deal": "Affär"
   },
   "tags": {
     "placeholder": "Lägg till tagg…",
@@ -313,5 +325,124 @@
     "searchCompany": "Sök företag…",
     "noCompanies": "Inga företag hittades.",
     "choose": "Välj…"
+  },
+  "deals": {
+    "title": "Affärer",
+    "new": "Ny affär",
+    "edit": "Redigera affär",
+    "name": "Namn",
+    "value": "Värde",
+    "currency": "Valuta",
+    "pipeline": "Pipeline",
+    "stage": "Steg",
+    "expectedClose": "Förväntat avslut",
+    "contacts": "Kontakter",
+    "company": "Företag",
+    "status": "Status",
+    "board": "Tavla",
+    "list": "Lista",
+    "probability": "Sannolikhet",
+    "statuses": {
+      "open": "Öppen",
+      "won": "Vunnen",
+      "lost": "Förlorad"
+    },
+    "markWon": "Vunnen",
+    "markLost": "Förlorad",
+    "reopen": "Öppna igen",
+    "lostTitle": "Markera som förlorad",
+    "lostReason": "Anledning",
+    "lostNote": "Kommentar (valfri)",
+    "chooseReason": "Välj anledning…",
+    "lostAs": "Förlorad: {{reason}}",
+    "wonToast": "Grattis! Affären är vunnen.",
+    "lostToast": "Affären är markerad som förlorad",
+    "reopenedToast": "Affären är öppen igen",
+    "stale": "Inaktiv",
+    "staleFor": "Ingen aktivitet på {{days}} dagar",
+    "deals_one": "{{count}} affär",
+    "deals_other": "{{count}} affärer",
+    "emptyColumn": "Inga affärer",
+    "emptyBody": "Skapa din första affär.",
+    "history": "Steghistorik",
+    "inStage": "{{duration}} i steget",
+    "now": "nu",
+    "movedTo": "Flyttad till {{stage}}",
+    "moveTo": "Flytta till steg",
+    "details": "Uppgifter",
+    "related": "Kopplat",
+    "noContacts": "Inga kontakter",
+    "confirmDelete": "Ta bort {{name}}? Affären flyttas till papperskorgen och kan återställas i 30 dagar.",
+    "deleted": "Affären ligger i papperskorgen i 30 dagar.",
+    "saved": "Affären är sparad",
+    "created": "Affären är skapad",
+    "addContact": "Lägg till kontakt",
+    "searchContacts": "Sök kontakter…",
+    "noContactsFound": "Inga kontakter hittades.",
+    "closed": "Avslutad {{date}}",
+    "weighted": "Viktat {{value}}",
+    "dragHint": "Dra affärer mellan stegen. Med tangentbordet: mellanslag för att lyfta, pilar för att flytta."
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "stages": "Steg",
+    "addStage": "Lägg till steg",
+    "stageName": "Namn på steget",
+    "probability": "Sannolikhet %",
+    "moveUp": "Flytta upp",
+    "moveDown": "Flytta ner",
+    "removeStage": "Ta bort steget",
+    "save": "Spara steg",
+    "saved": "Stegen är sparade",
+    "newPipeline": "Ny pipeline",
+    "pipelineName": "Namn på pipelinen",
+    "rename": "Byt namn",
+    "deletePipeline": "Ta bort pipelinen",
+    "confirmDelete": "Ta bort pipelinen {{name}}?",
+    "staleDays": "Markera affärer som inaktiva efter",
+    "days": "dagar",
+    "openDeals": "{{count}} öppna affärer"
+  },
+  "picklistsPage": {
+    "title": "Listor",
+    "intro": "Värdena som går att välja i formulären. Ändringar påverkar inte det som redan är sparat.",
+    "add": "Lägg till",
+    "save": "Spara",
+    "saved": "Listan är sparad",
+    "remove": "Ta bort",
+    "lead_source": "Källor",
+    "lost_reason": "Anledningar till förlorade affärer",
+    "industry": "Branscher"
+  },
+  "picklists": {
+    "lead_source": {
+      "website": "Webbplats",
+      "referral": "Rekommendation",
+      "event": "Event",
+      "cold_outreach": "Uppsökande",
+      "social": "Sociala medier",
+      "partner": "Partner",
+      "other": "Annat"
+    },
+    "lost_reason": {
+      "price": "Pris",
+      "competitor": "Valde en konkurrent",
+      "timing": "Fel tidpunkt",
+      "no_budget": "Ingen budget",
+      "no_response": "Slutade svara",
+      "other": "Annat"
+    },
+    "industry": {
+      "it": "IT och tech",
+      "construction": "Bygg",
+      "retail": "Handel",
+      "manufacturing": "Tillverkning",
+      "consulting": "Konsult",
+      "real_estate": "Fastigheter",
+      "transport": "Transport och logistik",
+      "healthcare": "Vård",
+      "education": "Utbildning",
+      "other": "Annat"
+    }
   }
 }

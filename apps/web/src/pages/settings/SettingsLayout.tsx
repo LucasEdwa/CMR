@@ -5,13 +5,15 @@ import { cn } from '@/lib/utils'
 const TABS = [
   { to: '/settings', key: 'settings.workspace', end: true },
   { to: '/settings/members', key: 'settings.members', end: false },
+  { to: '/settings/pipelines', key: 'settings.pipelines', end: false },
+  { to: '/settings/lists', key: 'settings.picklists', end: false },
   { to: '/settings/profile', key: 'settings.profile', end: false },
 ] as const
 
 export function SettingsLayout() {
   const { t } = useTranslation()
   return (
-    <div className="mx-auto grid max-w-3xl gap-6">
+    <div className="mx-auto grid grid-cols-1 max-w-3xl gap-6">
       <h1 className="text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>
       <nav className="flex gap-1 overflow-x-auto border-b" aria-label={t('settings.title')}>
         {TABS.map(({ to, key, end }) => (

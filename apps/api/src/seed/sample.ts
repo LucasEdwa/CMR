@@ -5,7 +5,7 @@ import { parseArgs } from 'node:util'
 import { appClient, db } from '../db/client.js'
 import { memberships, tenants, users } from '../db/schema.js'
 import { withTenant, withUser } from '../db/tenant.js'
-import { seedCrm } from './crm-data.js'
+import { seedCrm, seedDeals } from './crm-data.js'
 
 const { values } = parseArgs({
   options: {
@@ -48,7 +48,8 @@ async function main() {
       append: true,
     }),
   )
-  console.log(`Added ${result.contacts} contacts and ${result.companies} companies to ${ws.name}.`)
+  const dealCount = await withTenant(ctx, (tx) => seedDeals(tx, ctx, { count: 15, ownerIds, seed: Date.now() % 1000 }))
+  console.log(`Added ${result.contacts} contacts, ${result.companies} companies and ${dealCount} deals to ${ws.name}.`)
 }
 
 main()

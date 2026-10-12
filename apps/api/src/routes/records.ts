@@ -11,7 +11,7 @@ import {
   type TrashItem,
 } from '@crm/shared'
 import { WRITERS, inWorkspace, requireTenant } from '../auth/context.js'
-import { companies, contacts, savedViews, users } from '../db/schema.js'
+import { companies, contacts, deals, savedViews, users } from '../db/schema.js'
 import { withTenant } from '../db/tenant.js'
 import { HttpError } from '../errors.js'
 import { listTags } from '../services/tags.js'
@@ -91,7 +91,7 @@ export async function recordRoutes(app: FastifyInstance) {
     const ctx = requireTenant(request, WRITERS)
     const deleter = alias(users, 'deleter')
     const since = new Date(Date.now() - TRASH_RETENTION_DAYS * DAY_MS)
-    const [deletedContacts, deletedCompanies] = await withTenant(ctx, (tx) =>
+    const [deletedContacts, deletedCompanies, deletedDeals] = await withTenant(ctx, (tx) =>
       Promise.all([
         tx
           .select({
@@ -108,6 +108,11 @@ export async function recordRoutes(app: FastifyInstance) {
           .from(companies)
           .leftJoin(deleter, eq(deleter.id, companies.deletedByUserId))
           .where(sql`${companies.deletedAt} > ${since.toISOString()}::timestamptz`),
+        tx
+          .select({ id: deals.id, name: deals.name, deletedAt: deals.deletedAt, deletedBy: deleter.name })
+          .from(deals)
+          .leftJoin(deleter, eq(deleter.id, deals.deletedByUserId))
+          .where(sql`${deals.deletedAt} > ${since.toISOString()}::timestamptz`),
       ]),
     )
     const item = (type: TrashItem['type']) => (r: { id: string; name: string; deletedAt: Date | null; deletedBy: string | null }) => ({
@@ -118,7 +123,7 @@ export async function recordRoutes(app: FastifyInstance) {
       deletedBy: r.deletedBy,
       purgeAt: new Date(r.deletedAt!.getTime() + TRASH_RETENTION_DAYS * DAY_MS).toISOString(),
     })
-    return [...deletedContacts.map(item('contact')), ...deletedCompanies.map(item('company'))].sort((a, b) =>
+    return [...deletedContacts.map(item('contact')), ...deletedCompanies.map(item('company')), ...deletedDeals.map(item('deal'))].sort((a, b) =>
       b.deletedAt.localeCompare(a.deletedAt),
     )
   })

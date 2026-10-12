@@ -19,6 +19,7 @@ import { ApiRequestError } from '@/lib/api'
 import { recordApi, useRecordMutation } from '@/lib/crm'
 import { errorMessage } from '@/lib/errors'
 import { describedBy, fieldError } from '@/lib/form'
+import { picklistLabel, usePicklists } from '@/lib/deals'
 
 const formSchema = createCompanySchema.extend({
   ownerUserId: z.union([z.literal(''), z.uuid()]).nullable().optional(),
@@ -50,6 +51,8 @@ export function CompanyForm({ open, onOpenChange, company, onSaved }: Props) {
 function CompanyFormBody({ company, onDone, onCancel }: { company?: Company; onDone: (c: Company) => void; onCancel: () => void }) {
   const { t } = useTranslation()
   const { data: me } = useMe()
+  const picklists = usePicklists()
+  const industryKeys = [...new Set([...(picklists.data?.industry.map((s) => s.key) ?? []), ...(company?.industry ? [company.industry] : [])])]
   const [duplicate, setDuplicate] = useState<{ companyId: string; name: string } | null>(null)
   const form = useForm<FormValues, unknown, z.output<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -83,7 +86,7 @@ function CompanyFormBody({ company, onDone, onCancel }: { company?: Company; onD
     }
   })
 
-  const text = (name: 'name' | 'orgNumber' | 'vatNumber' | 'domain' | 'industry' | 'phone' | 'street' | 'postalCode' | 'city', label: string, extra: { inputMode?: 'numeric' | 'tel' | 'url'; placeholder?: string } = {}) => (
+  const text = (name: 'name' | 'orgNumber' | 'vatNumber' | 'domain' | 'phone' | 'street' | 'postalCode' | 'city', label: string, extra: { inputMode?: 'numeric' | 'tel' | 'url'; placeholder?: string } = {}) => (
     <Field id={name} label={label} error={fieldError(t, errors[name])}>
       <Input id={name} autoComplete="off" aria-invalid={!!errors[name]} {...describedBy(name, !!errors[name])} {...extra} {...form.register(name)} />
     </Field>
@@ -114,7 +117,16 @@ function CompanyFormBody({ company, onDone, onCancel }: { company?: Company; onD
         {text('phone', t('companies.phone'), { inputMode: 'tel' })}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {text('industry', t('companies.industry'))}
+        <Field id="industry" label={t('companies.industry')}>
+          <NativeSelect id="industry" {...form.register('industry')}>
+            <option value="">{t('common.none')}</option>
+            {industryKeys.map((key) => (
+              <option key={key} value={key}>
+                {picklistLabel(t, picklists.data, 'industry', key)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
         <Field id="size" label={t('companies.size')}>
           <NativeSelect id="size" {...form.register('size')}>
             <option value="">{t('common.none')}</option>

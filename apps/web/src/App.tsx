@@ -20,6 +20,10 @@ import { Members } from '@/pages/settings/Members'
 import { Profile } from '@/pages/settings/Profile'
 import { SettingsLayout } from '@/pages/settings/SettingsLayout'
 import { WorkspaceSettings } from '@/pages/settings/WorkspaceSettings'
+import { PipelineSettings } from '@/pages/settings/PipelineSettings'
+import { PicklistSettings } from '@/pages/settings/PicklistSettings'
+import { DealsPage } from '@/pages/deals/DealsPage'
+import { DealDetail } from '@/pages/deals/DealDetail'
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -44,6 +48,8 @@ const router = createBrowserRouter([
           { path: '/contacts/:id', element: <ContactDetail /> },
           { path: '/companies', element: <CompaniesPage /> },
           { path: '/companies/:id', element: <CompanyDetail /> },
+          { path: '/deals', element: <DealsPage /> },
+          { path: '/deals/:id', element: <DealDetail /> },
           { path: '/trash', element: <TrashPage /> },
           {
             path: '/settings',
@@ -52,6 +58,8 @@ const router = createBrowserRouter([
               { index: true, element: <WorkspaceSettings /> },
               { path: 'members', element: <Members /> },
               { path: 'profile', element: <Profile /> },
+              { path: 'pipelines', element: <PipelineSettings /> },
+              { path: 'lists', element: <PicklistSettings /> },
             ],
           },
         ],

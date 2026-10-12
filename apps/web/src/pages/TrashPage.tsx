@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { Building2, Trash2, User } from 'lucide-react'
+import { Building2, Handshake, Trash2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/records/EmptyState'
@@ -11,10 +11,10 @@ import { formatDate } from '@/lib/format'
 export function TrashPage() {
   const { t, i18n } = useTranslation()
   const trash = useTrash()
-  const restore = useRecordMutation(({ type, id }: { type: 'contact' | 'company'; id: string }) => recordApi.restore(type, id))
+  const restore = useRecordMutation(({ type, id }: { type: 'contact' | 'company' | 'deal'; id: string }) => recordApi.restore(type, id))
 
   return (
-    <div className="mx-auto grid max-w-3xl gap-4">
+    <div className="mx-auto grid grid-cols-1 max-w-3xl gap-4">
       <h1 className="text-2xl font-semibold tracking-tight">{t('trash.title')}</h1>
       <p className="text-muted-foreground">{t('trash.intro')}</p>
       {trash.isPending ? (
@@ -26,7 +26,7 @@ export function TrashPage() {
       ) : (
         <ul className="divide-y rounded-md border">
           {trash.data.map((item) => {
-            const Icon = item.type === 'contact' ? User : Building2
+            const Icon = { contact: User, company: Building2, deal: Handshake }[item.type]
             const date = formatDate(item.deletedAt, i18n.language)
             return (
               <li key={`${item.type}-${item.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5">

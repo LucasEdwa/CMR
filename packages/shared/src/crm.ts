@@ -5,9 +5,9 @@ export const LIFECYCLE_STAGES = ['lead', 'mql', 'sql', 'opportunity', 'customer'
 export type LifecycleStage = (typeof LIFECYCLE_STAGES)[number]
 export const CONSENT_BASES = ['consent', 'legitimate_interest', 'contract'] as const
 export const COMPANY_SIZES = ['1-9', '10-49', '50-249', '250+'] as const
-export const SAVED_VIEW_OBJECTS = ['contacts', 'companies'] as const
+export const SAVED_VIEW_OBJECTS = ['contacts', 'companies', 'deals'] as const
 export type SavedViewObject = (typeof SAVED_VIEW_OBJECTS)[number]
-// Suggested values; stored as free text until the picklist editor (Sprint 3).
+// Built-in lead sources (see DEFAULT_PICKLISTS); workspaces can edit the list in settings.
 export const LEAD_SOURCES = ['website', 'referral', 'event', 'cold_outreach', 'social', 'partner', 'other'] as const
 
 export const TRASH_RETENTION_DAYS = 30
@@ -257,8 +257,9 @@ export type SavedView = z.infer<typeof savedViewSchema>
 
 export const tagSchema = z.object({ id: z.uuid(), name: z.string(), usage: z.number().int() })
 
+export const TRASH_TYPES = ['contact', 'company', 'deal'] as const
 export const trashItemSchema = z.object({
-  type: z.enum(['contact', 'company']),
+  type: z.enum(TRASH_TYPES),
   id: z.uuid(),
   name: z.string(),
   deletedAt: z.string(),

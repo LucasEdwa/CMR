@@ -18,6 +18,7 @@ import { errorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/format'
 import { useListState } from '@/lib/listState'
 import { CompanyForm } from './CompanyForm'
+import { picklistLabel, usePicklists } from '@/lib/deals'
 
 const DEFAULT_COLUMNS = ['name', 'orgNumber', 'city', 'contactCount', 'owner']
 
@@ -29,13 +30,14 @@ export function CompaniesPage() {
   const state = useListState(DEFAULT_COLUMNS)
   const { params, apiParams, update, columns } = state
   const list = useCompanyList(apiParams)
+  const picklists = usePicklists()
   const [creating, setCreating] = useState(false)
 
   const all: Column<Company>[] = [
     { id: 'name', header: t('companies.name'), sortKey: 'name', cell: (c) => c.name },
     { id: 'orgNumber', header: t('companies.orgNumber'), cell: (c) => c.orgNumber },
     { id: 'domain', header: t('companies.domain'), cell: (c) => c.domain },
-    { id: 'industry', header: t('companies.industry'), cell: (c) => c.industry },
+    { id: 'industry', header: t('companies.industry'), cell: (c) => picklistLabel(t, picklists.data, 'industry', c.industry) },
     { id: 'size', header: t('companies.size'), cell: (c) => c.size && t(`sizes.${c.size}`) },
     { id: 'city', header: t('companies.city'), sortKey: 'city', cell: (c) => c.city },
     { id: 'contactCount', header: t('companies.contactCount'), sortKey: 'contactCount', cell: (c) => c.contactCount, className: 'text-right tabular-nums' },

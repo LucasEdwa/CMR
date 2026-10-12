@@ -61,7 +61,9 @@ export function useInvalidateRecords() {
   const queryClient = useQueryClient()
   return () =>
     Promise.all(
-      [keys.contacts, keys.companies, keys.tags, keys.trash].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      [keys.contacts, keys.companies, keys.tags, keys.trash, ['deals'], ['pipelines']].map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
     )
 }
 
@@ -74,8 +76,8 @@ export const recordApi = {
   createContact: (body: object) => send('POST', '/contacts', body).then((r) => contactSchema.parse(r)),
   updateContact: (id: string, body: object) => send('PATCH', `/contacts/${id}`, body).then((r) => contactSchema.parse(r)),
   deleteContact: (id: string) => send('DELETE', `/contacts/${id}`),
-  restore: (type: 'contact' | 'company', id: string) =>
-    send('POST', `/${type === 'contact' ? 'contacts' : 'companies'}/${id}/restore`),
+  restore: (type: 'contact' | 'company' | 'deal', id: string) =>
+    send('POST', `/${{ contact: 'contacts', company: 'companies', deal: 'deals' }[type]}/${id}/restore`),
   createCompany: (body: object) => send('POST', '/companies', body).then((r) => companySchema.parse(r)),
   updateCompany: (id: string, body: object) => send('PATCH', `/companies/${id}`, body).then((r) => companySchema.parse(r)),
   deleteCompany: (id: string) => send('DELETE', `/companies/${id}`),

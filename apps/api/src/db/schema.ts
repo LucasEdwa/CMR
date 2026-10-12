@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
-import { bigint, boolean, foreignKey, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
-import { COMPANY_SIZES, CONSENT_BASES, LIFECYCLE_STAGES, ROLES, SAVED_VIEW_OBJECTS } from '@crm/shared'
+import { bigint, boolean, date, doublePrecision, foreignKey, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { COMPANY_SIZES, CONSENT_BASES, DEAL_STATUSES, DEFAULT_STALE_DAYS, LIFECYCLE_STAGES, PICKLIST_KINDS, ROLES, SAVED_VIEW_OBJECTS } from '@crm/shared'
 
 // Every table with a tenant_id column needs RLS enabled + forced and a policy.
 // Policies live in hand-written SQL migrations (drizzle/*_rls*.sql); the RLS meta-test enforces this.
@@ -20,6 +20,8 @@ export const tenants = pgTable('tenants', {
   currency: text('currency').notNull().default('SEK'),
   timezone: text('timezone').notNull().default('Europe/Stockholm'),
   dateFormat: text('date_format').notNull().default('yyyy-MM-dd'),
+  // An open deal with no activity for this many days is shown as stale.
+  staleDealDays: integer('stale_deal_days').notNull().default(DEFAULT_STALE_DAYS),
   ...timestamps,
 })
 
@@ -329,4 +331,141 @@ export const savedViews = pgTable(
     ...timestamps,
   },
   (t) => [unique().on(t.tenantId, t.id), index('saved_views_tenant_object_idx').on(t.tenantId, t.object)],
+)
+
+// ---------------------------------------------------------------------------
+// Deals and pipelines (Sprint 3)
+
+export const dealStatus = pgEnum('deal_status', DEAL_STATUSES)
+export const picklistKind = pgEnum('picklist_kind', PICKLIST_KINDS)
+
+export const pipelines = pgTable(
+  'pipelines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    position: integer('position').notNull(),
+    ...timestamps,
+  },
+  (t) => [unique().on(t.tenantId, t.id), index('pipelines_tenant_idx').on(t.tenantId, t.position)],
+)
+
+export const pipelineStages = pgTable(
+  'pipeline_stages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    pipelineId: uuid('pipeline_id').notNull(),
+    name: text('name').notNull(),
+    position: integer('position').notNull(),
+    probability: integer('probability').notNull().default(0),
+    ...timestamps,
+  },
+  (t) => [
+    unique().on(t.tenantId, t.id),
+    // A stage always belongs to a pipeline of the same tenant; deleting a pipeline deletes its stages.
+    foreignKey({ columns: [t.tenantId, t.pipelineId], foreignColumns: [pipelines.tenantId, pipelines.id] }).onDelete('cascade'),
+    index('pipeline_stages_pipeline_idx').on(t.tenantId, t.pipelineId, t.position),
+  ],
+)
+
+export const deals = pgTable(
+  'deals',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // Integer minor units (öre for SEK).
+    value: bigint('value', { mode: 'number' }).notNull().default(0),
+    currency: text('currency').notNull().default('SEK'),
+    pipelineId: uuid('pipeline_id').notNull(),
+    stageId: uuid('stage_id').notNull(),
+    // Order within the stage column on the board.
+    position: doublePrecision('position').notNull().default(0),
+    status: dealStatus('status').notNull().default('open'),
+    lostReason: text('lost_reason'),
+    lostNote: text('lost_note'),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    expectedCloseDate: date('expected_close_date'),
+    companyId: uuid('company_id'),
+    // Bumped by changes now and by logged activities from Sprint 4; drives the stale marker.
+    lastActivityAt: timestamp('last_activity_at', { withTimezone: true }).notNull().defaultNow(),
+    stageEnteredAt: timestamp('stage_entered_at', { withTimezone: true }).notNull().defaultNow(),
+    ...recordMeta,
+  },
+  (t) => [
+    unique().on(t.tenantId, t.id),
+    foreignKey({ columns: [t.tenantId, t.pipelineId], foreignColumns: [pipelines.tenantId, pipelines.id] }),
+    foreignKey({ columns: [t.tenantId, t.stageId], foreignColumns: [pipelineStages.tenantId, pipelineStages.id] }),
+    foreignKey({ columns: [t.tenantId, t.companyId], foreignColumns: [companies.tenantId, companies.id] }),
+    index('deals_board_idx').on(t.tenantId, t.pipelineId, t.stageId, t.position).where(sql`${t.deletedAt} is null and ${t.status} = 'open'`),
+    index('deals_tenant_updated_idx').on(t.tenantId, t.updatedAt.desc()),
+    index('deals_tenant_company_idx').on(t.tenantId, t.companyId),
+    index('deals_tenant_owner_idx').on(t.tenantId, t.ownerUserId),
+    index('deals_search_trgm_idx').using('gin', sql`${t.searchText} gin_trgm_ops`),
+  ],
+)
+
+export const dealContacts = pgTable(
+  'deal_contacts',
+  {
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    dealId: uuid('deal_id').notNull(),
+    contactId: uuid('contact_id').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.dealId, t.contactId] }),
+    foreignKey({ columns: [t.tenantId, t.dealId], foreignColumns: [deals.tenantId, deals.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.contactId], foreignColumns: [contacts.tenantId, contacts.id] }).onDelete('cascade'),
+    index('deal_contacts_contact_idx').on(t.tenantId, t.contactId),
+  ],
+)
+
+// One row per stage a deal has been in; left_at is null for the current one.
+export const dealStageHistory = pgTable(
+  'deal_stage_history',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    dealId: uuid('deal_id').notNull(),
+    // Names are copied so history survives renamed or deleted stages.
+    stageId: uuid('stage_id'),
+    stageName: text('stage_name').notNull(),
+    pipelineName: text('pipeline_name').notNull(),
+    enteredAt: timestamp('entered_at', { withTimezone: true }).notNull().defaultNow(),
+    leftAt: timestamp('left_at', { withTimezone: true }),
+    changedByUserId: uuid('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (t) => [
+    foreignKey({ columns: [t.tenantId, t.dealId], foreignColumns: [deals.tenantId, deals.id] }).onDelete('cascade'),
+    index('deal_stage_history_deal_idx').on(t.tenantId, t.dealId, t.enteredAt),
+  ],
+)
+
+export const picklistItems = pgTable(
+  'picklist_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    kind: picklistKind('kind').notNull(),
+    // Stable value stored on records. Built-in keys are translated; label overrides the translation.
+    key: text('key').notNull(),
+    label: text('label'),
+    position: integer('position').notNull(),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex('picklist_items_key_idx').on(t.tenantId, t.kind, t.key)],
 )

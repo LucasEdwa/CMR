@@ -3,11 +3,11 @@ import type { PgBoss } from 'pg-boss'
 import { TRASH_RETENTION_DAYS } from '@crm/shared'
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
-import { companies, contacts } from '../db/schema.js'
+import { companies, contacts, deals } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { QUEUES, type TenantJob } from '../jobs/queues.js'
 
-export type PurgeJob = TenantJob<{ type: 'contact' | 'company'; id: string }>
+export type PurgeJob = TenantJob<{ type: 'contact' | 'company' | 'deal'; id: string }>
 
 const RETENTION_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000
 
@@ -32,15 +32,16 @@ export async function schedulePurge(ctx: TenantContext, type: PurgeJob['type'], 
 // (it may have been restored, or deleted again later).
 export async function purgeRecord(tx: Tx, job: PurgeJob) {
   const cutoff = new Date(Date.now() - RETENTION_MS)
-  const table = job.type === 'contact' ? contacts : companies
+  const table = { contact: contacts, company: companies, deal: deals }[job.type]
   if (job.type === 'company') {
     const [stillDeleted] = await tx
       .select({ id: companies.id })
       .from(companies)
       .where(and(eq(companies.id, job.id), lt(companies.deletedAt, cutoff)))
     if (!stillDeleted) return false
-    // Contacts outlive their company: unlink them before the company is erased.
+    // Contacts and deals outlive their company: unlink them before the company is erased.
     await tx.update(contacts).set({ companyId: null }).where(eq(contacts.companyId, job.id))
+    await tx.update(deals).set({ companyId: null }).where(eq(deals.companyId, job.id))
   }
   const [gone] = await tx
     .delete(table)
