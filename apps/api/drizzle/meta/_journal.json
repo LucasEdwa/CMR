@@ -71,6 +71,20 @@
       "when": 1791802750706,
       "tag": "0009_swedish_sort_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791803499312,
+      "tag": "0010_deals_pipelines",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791803500070,
+      "tag": "0011_deals_pipelines_rls",
+      "breakpoints": true
     }
   ]
 }

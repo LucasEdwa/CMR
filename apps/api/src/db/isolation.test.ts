@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { eq, sql } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { createDb } from './client.js'
-import { auditLog, companies, contacts, invitations, memberships, savedViews, tags, tenants, users } from './schema.js'
+import { auditLog, companies, contacts, deals, invitations, memberships, pipelineStages, pipelines, picklistItems, savedViews, tags, tenants, users } from './schema.js'
 import { withTenant, withUser, type TenantContext } from './tenant.js'
 import { audit } from './audit.js'
 import { createTenantWithUser, pgErrorOf } from '../test/factories.js'
@@ -38,6 +38,13 @@ beforeAll(async () => {
         const [company] = await tx.insert(companies).values({ tenantId: ctx.tenantId, name: 'Isolerat AB' }).returning()
         await tx.insert(contacts).values({ tenantId: ctx.tenantId, firstName: 'Iso', companyId: company!.id })
         await tx.insert(tags).values({ tenantId: ctx.tenantId, name: `tag-${randomUUID()}` })
+        const [pipeline] = await tx.insert(pipelines).values({ tenantId: ctx.tenantId, name: 'Iso', position: 0 }).returning()
+        const [stage] = await tx
+          .insert(pipelineStages)
+          .values({ tenantId: ctx.tenantId, pipelineId: pipeline!.id, name: 'S', position: 0 })
+          .returning()
+        await tx.insert(deals).values({ tenantId: ctx.tenantId, name: 'Iso', pipelineId: pipeline!.id, stageId: stage!.id })
+        await tx.insert(picklistItems).values({ tenantId: ctx.tenantId, kind: 'lost_reason', key: 'iso', position: 0 })
         await tx.insert(savedViews).values({
           tenantId: ctx.tenantId,
           object: 'contacts',
@@ -62,6 +69,9 @@ const tenantTables = [
   { name: 'contacts', table: contacts },
   { name: 'tags', table: tags },
   { name: 'saved_views', table: savedViews },
+  { name: 'pipelines', table: pipelines },
+  { name: 'pipeline_stages', table: pipelineStages },
+  { name: 'deals', table: deals },
 ] as const
 
 describe.each(tenantTables)('$name isolation', ({ table }) => {
