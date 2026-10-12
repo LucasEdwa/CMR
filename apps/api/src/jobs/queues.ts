@@ -7,6 +7,8 @@ export const QUEUES = {
   email: 'email.send',
   // Erases one soft-deleted record once it has been in Trash for 30 days.
   purgeRecord: 'records.purge',
+  // Sends one task's reminder (email + notification) on the morning of its due date.
+  taskReminder: 'tasks.reminder',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]

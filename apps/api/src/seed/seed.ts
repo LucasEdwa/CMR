@@ -3,7 +3,7 @@ import { appClient, db } from '../db/client.js'
 import { accounts, memberships, tenants, users } from '../db/schema.js'
 import { withTenant } from '../db/tenant.js'
 import { SEED_PASSWORD, SEED_TENANTS, SEED_USERS } from './fixtures.js'
-import { seedCrm, seedDeals } from './crm-data.js'
+import { seedActivities, seedCrm, seedDeals } from './crm-data.js'
 
 const large = process.argv.includes('--large')
 
@@ -49,6 +49,12 @@ async function seed() {
   const acmeDeals = await withTenant(acme, (tx) => seedDeals(tx, acme, { count: 40, ownerIds: acmeOwners, seed: 11 }))
   const betaDeals = await withTenant(beta, (tx) => seedDeals(tx, beta, { count: 5, ownerIds: [beta.userId], seed: 12 }))
   console.log(`Deals: Acme ${acmeDeals}, Beta ${betaDeals} (0 = already seeded).`)
+
+  const acmeWork = await withTenant(acme, (tx) => seedActivities(tx, acme, { ownerIds: acmeOwners, seed: 21 }))
+  const betaWork = await withTenant(beta, (tx) => seedActivities(tx, beta, { ownerIds: [beta.userId], seed: 22 }))
+  console.log(
+    `Activities/tasks: Acme ${acmeWork.activities}/${acmeWork.tasks}, Beta ${betaWork.activities}/${betaWork.tasks} (0 = already seeded).`,
+  )
 
   if (large) {
     // A separate workspace keeps the 20 000 contacts out of Acme's everyday test data.

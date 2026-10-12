@@ -8,6 +8,7 @@ import { audit } from '../db/audit.js'
 import { db } from '../db/client.js'
 import { memberships, sessions, tenants } from '../db/schema.js'
 import { withTenant, withUser } from '../db/tenant.js'
+import { retimeOpenTasks } from '../services/tasks.js'
 import { HttpError } from '../errors.js'
 import { isUniqueViolation } from '../db/errors.js'
 
@@ -75,6 +76,7 @@ export async function workspaceRoutes(app: FastifyInstance) {
         .where(eq(tenants.id, ctx.tenantId))
         .returning()
       await audit(tx, ctx, { action: 'update', entityType: 'workspace', entityId: ctx.tenantId, before, after })
+      if (before && after!.timezone !== before.timezone) await retimeOpenTasks(tx)
       return after!
     })
     return toWorkspace(tenant)

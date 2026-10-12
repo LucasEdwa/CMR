@@ -17,6 +17,8 @@ import { formatDuration } from '@/lib/duration'
 import { errorMessage } from '@/lib/errors'
 import { formatDate, formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { Timeline } from '@/components/activities/Timeline'
+import { RecordTasks } from '@/components/tasks/RecordTasks'
 import { DealForm } from './DealForm'
 import { LostDialog } from './LostDialog'
 
@@ -151,6 +153,7 @@ export function DealDetail() {
               />
             </CardContent>
           </Card>
+          <Timeline record={{ type: 'deal', id: d.id }} />
           <Card>
             <CardHeader>
               <CardTitle>
@@ -177,7 +180,9 @@ export function DealDetail() {
             </CardContent>
           </Card>
         </div>
-        <Card className="self-start">
+        <div className="grid min-w-0 content-start gap-6">
+        <RecordTasks record={{ type: 'deal', id: d.id, name: d.name }} />
+        <Card>
           <CardHeader>
             <CardTitle>
               <h2>{t('deals.related')}</h2>
@@ -199,6 +204,7 @@ export function DealDetail() {
             {!d.company && d.contacts.length === 0 && <p className="text-muted-foreground text-sm">{t('deals.noContacts')}</p>}
           </CardContent>
         </Card>
+        </div>
       </div>
 
       <DealForm open={editing} onOpenChange={setEditing} deal={d} />

@@ -85,6 +85,20 @@
       "when": 1791803500070,
       "tag": "0011_deals_pipelines_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791805216752,
+      "tag": "0012_activities_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791805217864,
+      "tag": "0013_activities_tasks_rls",
+      "breakpoints": true
     }
   ]
 }

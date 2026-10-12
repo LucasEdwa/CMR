@@ -33,9 +33,9 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 | `pnpm test` | Unit and integration tests (API tests run against the `crm_test` database) |
 | `pnpm test:e2e` | Playwright, desktop and phone; starts the dev servers if they are not running |
 | `pnpm lint` / `pnpm typecheck` / `pnpm build` | What CI runs |
-| `pnpm seed` | Demo data: Acme AB (200 contacts, 30 companies, 40 deals incl. two stale ones) and Beta AB (10, 3, 5). Safe to rerun |
+| `pnpm seed` | Demo data: Acme AB (200 contacts, 30 companies, 40 deals incl. two stale ones, activities, and overdue/today/upcoming tasks per user) and Beta AB (10, 3, 5). Safe to rerun |
 | `pnpm seed:large` | Adds "Stor Data AB" with 20 000 contacts for speed checks (Anna is owner) |
-| `pnpm seed:sample --email <you> [--workspace "Name AB"] [--contacts 50] [--companies 10]` | Adds sample contacts and companies (and 15 deals if it has none) to your own company |
+| `pnpm seed:sample --email <you> [--workspace "Name AB"] [--contacts 50] [--companies 10]` | Adds sample contacts and companies (plus 15 deals, activities and tasks if it has none) to your own company |
 | `pnpm db:generate --name <name>` | New migration from `apps/api/src/db/schema.ts` |
 | `pnpm db:migrate` | Apply migrations, set up pg-boss queues and grants |
 
@@ -45,7 +45,8 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 - Every table with `tenant_id` gets RLS **enabled and forced** plus policies in a hand-written migration (`pnpm db:generate --custom --name <name>_rls`). `src/db/rls-meta.test.ts` fails CI if one is missing.
 - All tenant queries go through `withTenant(ctx, tx => ...)`, which sets the context transaction-locally.
 - Every mutation calls `audit(tx, ctx, {...})` in the same transaction. The audit log is append-only for `app_user`.
-- New queues go in `src/jobs/queues.ts`; job payloads always carry `tenantId` and `userId`.
+- New queues go in `src/jobs/queues.ts`; job payloads always carry `tenantId` and `userId`. Run `pnpm db:migrate` after adding one: the migrate script creates the queues.
+- Task reminders: one `tasks.reminder` job per task and due date, at 08:00 in the assignee's timezone (their own, else the workspace's). The job re-checks the task before emailing, so moved, reassigned or completed tasks are skipped.
 
 ## Auth
 

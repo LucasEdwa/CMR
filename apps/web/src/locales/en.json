@@ -107,7 +107,8 @@
     "contacts": "Contacts",
     "companies": "Companies",
     "trash": "Trash",
-    "deals": "Deals"
+    "deals": "Deals",
+    "tasks": "Tasks"
   },
   "home": {
     "greeting": "Hi {{name}}!",
@@ -136,7 +137,9 @@
     "leave": "Leave company",
     "confirmLeave": "Leave {{workspace}}? You'll need a new invitation to come back.",
     "pipelines": "Pipelines",
-    "picklists": "Lists"
+    "picklists": "Lists",
+    "workspaceTimezone": "Same as the workspace",
+    "timezoneHint": "Decides what counts as today and when reminders are sent (08:00)."
   },
   "status": {
     "title": "System status",
@@ -381,7 +384,10 @@
     "noContactsFound": "No contacts found.",
     "closed": "Closed {{date}}",
     "weighted": "Weighted {{value}}",
-    "dragHint": "Drag deals between stages. With the keyboard: space to pick up, arrows to move."
+    "dragHint": "Drag deals between stages. With the keyboard: space to pick up, arrows to move.",
+    "nextTask": "Next: {{date}}",
+    "nextTaskOverdue": "Overdue: {{date}}",
+    "noNextTask": "No task planned"
   },
   "pipelines": {
     "title": "Pipelines",
@@ -444,5 +450,147 @@
       "education": "Education",
       "other": "Other"
     }
+  },
+  "activities": {
+    "title": "Activities",
+    "logType": "Activity type",
+    "types": {
+      "note": "Note",
+      "call": "Call",
+      "meeting": "Meeting",
+      "email": "Email"
+    },
+    "plural": {
+      "note": "Notes",
+      "call": "Calls",
+      "meeting": "Meetings",
+      "email": "Emails"
+    },
+    "log": {
+      "note": "Save note",
+      "call": "Log call",
+      "meeting": "Log meeting",
+      "email": "Log email"
+    },
+    "subject": "Subject",
+    "subjectPlaceholder": {
+      "call": "E.g. Follow-up",
+      "meeting": "E.g. Demo",
+      "email": "Subject line"
+    },
+    "bodyPlaceholder": {
+      "note": "Write a note… Mention a colleague with @",
+      "call": "What did you talk about? (optional)",
+      "meeting": "Meeting notes (optional)",
+      "email": "Summary of the email (optional)"
+    },
+    "when": "When",
+    "duration": "Duration (minutes)",
+    "outcome": "Outcome",
+    "outcomes": {
+      "connected": "Connected",
+      "no_answer": "No answer",
+      "voicemail": "Voicemail",
+      "busy": "Busy",
+      "wrong_number": "Wrong number"
+    },
+    "direction": "Direction",
+    "directions": {
+      "outbound": "Sent",
+      "inbound": "Received"
+    },
+    "noteRequired": "Write something in the note.",
+    "contentRequired": "Enter a subject or a note.",
+    "logged": "Activity saved",
+    "deleted": "Activity deleted",
+    "confirmDelete": "Delete this activity? It disappears from every record it shows on.",
+    "filter": "Filter activities",
+    "show": "Show:",
+    "empty": "No activities yet.",
+    "noneOfType": "No activities of that type.",
+    "more": "Show more",
+    "pinned": "Pinned",
+    "pin": "Pin to top",
+    "unpin": "Unpin",
+    "actions": "Activity actions",
+    "alsoOn": "Also on:",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "formatting": "Formatting",
+    "format": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list"
+    },
+    "mentionSomeone": "Mention a colleague"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "myTasks": "My tasks",
+    "new": "New task",
+    "edit": "Edit task",
+    "about": "About {{name}}",
+    "titleLabel": "What needs to be done?",
+    "dueDate": "Date",
+    "dueTime": "Time",
+    "timeHint": "Optional",
+    "assignee": "Assignee",
+    "meName": "{{name}} (me)",
+    "priority": "Priority",
+    "priorities": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High"
+    },
+    "notes": "Note",
+    "created": "Task created",
+    "completed": "Task done",
+    "reopened": "Task reopened",
+    "deleted": "Task deleted",
+    "confirmDelete": "Delete the task \"{{title}}\"?",
+    "markDone": "Mark \"{{title}}\" as done",
+    "markOpen": "Mark \"{{title}}\" as not done",
+    "editNamed": "Edit \"{{title}}\"",
+    "deleteNamed": "Delete \"{{title}}\"",
+    "overdue": "Overdue",
+    "doneOn": "Done {{date}}",
+    "open": "Open tasks",
+    "done": "Completed tasks",
+    "noneOpen": "No open tasks.",
+    "showDone_one": "Show {{count}} completed",
+    "showDone_other": "Show {{count}} completed",
+    "hideDone": "Hide completed",
+    "showFor": "Show for",
+    "me": "Me",
+    "openCount_one": "{{count}} open task",
+    "openCount_other": "{{count}} open tasks",
+    "sections": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "done": "Completed"
+    },
+    "sectionEmpty": {
+      "overdue": "Nothing overdue.",
+      "today": "Nothing else today.",
+      "upcoming": "Nothing planned.",
+      "done": "No completed tasks yet."
+    },
+    "emptyTitle": "No tasks",
+    "emptyBody": "Create a task here or from a contact, company or deal."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "label_zero": "Notifications",
+    "label_one": "Notifications, {{count}} unread",
+    "label_other": "Notifications, {{count}} unread",
+    "markAll": "Mark all as read",
+    "empty": "No notifications.",
+    "unread": "Unread",
+    "someone": "Someone",
+    "mention": "{{actor}} mentioned you on {{record}}",
+    "assigned": "{{actor}} assigned you a task",
+    "reminder": "Reminder: due today"
   }
 }

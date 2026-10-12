@@ -120,6 +120,8 @@ export const dealSchema = z.object({
   company: ref.nullable(),
   contacts: z.array(ref),
   stale: z.boolean(),
+  // Earliest open task on the deal (shown on the board card).
+  nextTask: z.object({ dueDate: z.string(), dueTime: z.string().nullable(), overdue: z.boolean() }).nullable(),
   lastActivityAt: z.string(),
   stageEnteredAt: z.string(),
   createdAt: z.string(),

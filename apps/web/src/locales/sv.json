@@ -107,7 +107,8 @@
     "contacts": "Kontakter",
     "companies": "Företag",
     "trash": "Papperskorg",
-    "deals": "Affärer"
+    "deals": "Affärer",
+    "tasks": "Uppgifter"
   },
   "home": {
     "greeting": "Hej {{name}}!",
@@ -136,7 +137,9 @@
     "leave": "Lämna företaget",
     "confirmLeave": "Lämna {{workspace}}? Du behöver en ny inbjudan för att komma tillbaka.",
     "pipelines": "Pipelines",
-    "picklists": "Listor"
+    "picklists": "Listor",
+    "workspaceTimezone": "Samma som företaget",
+    "timezoneHint": "Styr vad som räknas som idag och när påminnelser skickas (kl. 08:00)."
   },
   "status": {
     "title": "Systemstatus",
@@ -381,7 +384,10 @@
     "noContactsFound": "Inga kontakter hittades.",
     "closed": "Avslutad {{date}}",
     "weighted": "Viktat {{value}}",
-    "dragHint": "Dra affärer mellan stegen. Med tangentbordet: mellanslag för att lyfta, pilar för att flytta."
+    "dragHint": "Dra affärer mellan stegen. Med tangentbordet: mellanslag för att lyfta, pilar för att flytta.",
+    "nextTask": "Nästa: {{date}}",
+    "nextTaskOverdue": "Försenad: {{date}}",
+    "noNextTask": "Ingen planerad uppgift"
   },
   "pipelines": {
     "title": "Pipelines",
@@ -444,5 +450,147 @@
       "education": "Utbildning",
       "other": "Annat"
     }
+  },
+  "activities": {
+    "title": "Aktiviteter",
+    "logType": "Typ av aktivitet",
+    "types": {
+      "note": "Anteckning",
+      "call": "Samtal",
+      "meeting": "Möte",
+      "email": "E-post"
+    },
+    "plural": {
+      "note": "Anteckningar",
+      "call": "Samtal",
+      "meeting": "Möten",
+      "email": "E-post"
+    },
+    "log": {
+      "note": "Spara anteckning",
+      "call": "Logga samtal",
+      "meeting": "Logga möte",
+      "email": "Logga e-post"
+    },
+    "subject": "Ämne",
+    "subjectPlaceholder": {
+      "call": "T.ex. Uppföljning",
+      "meeting": "T.ex. Demo",
+      "email": "Ämnesrad"
+    },
+    "bodyPlaceholder": {
+      "note": "Skriv en anteckning… Nämn en kollega med @",
+      "call": "Vad pratade ni om? (valfritt)",
+      "meeting": "Anteckningar från mötet (valfritt)",
+      "email": "Sammanfattning av mejlet (valfritt)"
+    },
+    "when": "När",
+    "duration": "Längd (minuter)",
+    "outcome": "Resultat",
+    "outcomes": {
+      "connected": "Fick svar",
+      "no_answer": "Inget svar",
+      "voicemail": "Röstbrevlåda",
+      "busy": "Upptaget",
+      "wrong_number": "Fel nummer"
+    },
+    "direction": "Riktning",
+    "directions": {
+      "outbound": "Skickat",
+      "inbound": "Mottaget"
+    },
+    "noteRequired": "Skriv något i anteckningen.",
+    "contentRequired": "Fyll i ämne eller anteckning.",
+    "logged": "Aktiviteten är sparad",
+    "deleted": "Aktiviteten är borttagen",
+    "confirmDelete": "Ta bort aktiviteten? Den försvinner från alla poster den visas på.",
+    "filter": "Filtrera aktiviteter",
+    "show": "Visa:",
+    "empty": "Inga aktiviteter än.",
+    "noneOfType": "Inga aktiviteter av den typen.",
+    "more": "Visa fler",
+    "pinned": "Fäst",
+    "pin": "Fäst överst",
+    "unpin": "Lossa",
+    "actions": "Åtgärder för aktivitet",
+    "alsoOn": "Även på:",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "formatting": "Formatering",
+    "format": {
+      "bold": "Fetstil",
+      "italic": "Kursiv",
+      "bulletList": "Punktlista",
+      "orderedList": "Numrerad lista"
+    },
+    "mentionSomeone": "Nämn en kollega"
+  },
+  "tasks": {
+    "title": "Uppgifter",
+    "myTasks": "Mina uppgifter",
+    "new": "Ny uppgift",
+    "edit": "Ändra uppgift",
+    "about": "Gäller {{name}}",
+    "titleLabel": "Vad ska göras?",
+    "dueDate": "Datum",
+    "dueTime": "Tid",
+    "timeHint": "Valfri",
+    "assignee": "Ansvarig",
+    "meName": "{{name}} (jag)",
+    "priority": "Prioritet",
+    "priorities": {
+      "low": "Låg",
+      "normal": "Normal",
+      "high": "Hög"
+    },
+    "notes": "Anteckning",
+    "created": "Uppgiften är skapad",
+    "completed": "Uppgiften är klar",
+    "reopened": "Uppgiften är öppen igen",
+    "deleted": "Uppgiften är borttagen",
+    "confirmDelete": "Ta bort uppgiften \"{{title}}\"?",
+    "markDone": "Markera \"{{title}}\" som klar",
+    "markOpen": "Markera \"{{title}}\" som inte klar",
+    "editNamed": "Ändra \"{{title}}\"",
+    "deleteNamed": "Ta bort \"{{title}}\"",
+    "overdue": "Försenad",
+    "doneOn": "Klar {{date}}",
+    "open": "Öppna uppgifter",
+    "done": "Klara uppgifter",
+    "noneOpen": "Inga öppna uppgifter.",
+    "showDone_one": "Visa {{count}} klar",
+    "showDone_other": "Visa {{count}} klara",
+    "hideDone": "Dölj klara",
+    "showFor": "Visa för",
+    "me": "Mig",
+    "openCount_one": "{{count}} öppen uppgift",
+    "openCount_other": "{{count}} öppna uppgifter",
+    "sections": {
+      "overdue": "Försenade",
+      "today": "Idag",
+      "upcoming": "Kommande",
+      "done": "Klara"
+    },
+    "sectionEmpty": {
+      "overdue": "Inget försenat.",
+      "today": "Inget mer idag.",
+      "upcoming": "Inget planerat.",
+      "done": "Inga klara uppgifter än."
+    },
+    "emptyTitle": "Inga uppgifter",
+    "emptyBody": "Skapa en uppgift här eller från en kontakt, ett företag eller en affär."
+  },
+  "notifications": {
+    "title": "Aviseringar",
+    "label_zero": "Aviseringar",
+    "label_one": "Aviseringar, {{count}} oläst",
+    "label_other": "Aviseringar, {{count}} olästa",
+    "markAll": "Markera alla som lästa",
+    "empty": "Inga aviseringar.",
+    "unread": "Oläst",
+    "someone": "Någon",
+    "mention": "{{actor}} nämnde dig på {{record}}",
+    "assigned": "{{actor}} gav dig en uppgift",
+    "reminder": "Påminnelse: ska göras idag"
   }
 }

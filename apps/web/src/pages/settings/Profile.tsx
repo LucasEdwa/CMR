@@ -9,12 +9,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field } from '@/components/Field'
 import { LanguageToggle } from '@/components/LanguageToggle'
+import { NativeSelect } from '@/components/NativeSelect'
 import { ME_KEY, useMe } from '@/hooks/useMe'
 import { send } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
 import { describedBy, fieldError } from '@/lib/form'
 
 const schema = z.object({ name: z.string().trim().min(1).max(100) })
+const TIMEZONES = Intl.supportedValuesOf('timeZone')
 
 export function Profile() {
   const { t } = useTranslation()
@@ -28,7 +30,7 @@ export function Profile() {
   }, [me, form])
 
   const update = useMutation({
-    mutationFn: (body: { name?: string; locale?: string }) => send('PATCH', '/me', body),
+    mutationFn: (body: { name?: string; locale?: string; timezone?: string | null }) => send('PATCH', '/me', body),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ME_KEY }),
     onError: (err) => toast.error(errorMessage(t, err)),
   })
@@ -53,6 +55,30 @@ export function Profile() {
       <section className="grid gap-2">
         <h2 className="text-sm font-medium">{t('language.label')}</h2>
         <LanguageToggle onChange={(locale) => update.mutate({ locale })} />
+      </section>
+      <section className="grid gap-2">
+        <label htmlFor="profile-timezone" className="text-sm font-medium">
+          {t('settings.timezone')}
+        </label>
+        <NativeSelect
+          id="profile-timezone"
+          aria-describedby="profile-timezone-hint"
+          value={me?.user.timezone ?? ''}
+          disabled={!me || update.isPending}
+          onChange={(e) =>
+            update.mutate({ timezone: e.target.value || null }, { onSuccess: () => toast.success(t('common.saved')) })
+          }
+        >
+          <option value="">{t('settings.workspaceTimezone')}</option>
+          {TIMEZONES.map((tz) => (
+            <option key={tz} value={tz}>
+              {tz.replaceAll('_', ' ')}
+            </option>
+          ))}
+        </NativeSelect>
+        <p id="profile-timezone-hint" className="text-muted-foreground text-sm">
+          {t('settings.timezoneHint')}
+        </p>
       </section>
     </div>
   )
