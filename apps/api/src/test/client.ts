@@ -76,3 +76,16 @@ export async function createWorkspace(client: TestClient, name = 'Testbolaget AB
   if (res.statusCode !== 201) throw new Error(`create workspace failed: ${res.body}`)
   return res.json() as { id: string; slug: string }
 }
+
+// Invites a new person with `role` into the owner's active workspace; returns their logged-in client.
+export async function addMember(app: FastifyInstance, owner: TestClient, role: 'admin' | 'member' | 'viewer', name: string = role) {
+  const email = uniqueEmail(role)
+  const res = await owner.post('/api/workspace/invitations', { email, role })
+  if (res.statusCode !== 201) throw new Error(`invite failed: ${res.body}`)
+  const token = lastLinkTo(email).split('/invite/')[1]!
+  const client = new TestClient(app)
+  const accept = await client.post(`/api/invitations/${token}/accept`, { name, password: 'Secret123!' })
+  if (accept.statusCode !== 200) throw new Error(`accept failed: ${accept.body}`)
+  const userId = (await client.get('/api/me')).json().user.id as string
+  return { client, userId, email }
+}
