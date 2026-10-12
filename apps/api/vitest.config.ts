@@ -13,6 +13,8 @@ export default defineConfig({
       DATABASE_URL: process.env.TEST_DATABASE_URL ?? testDb('app_user'),
       DATABASE_OWNER_URL: process.env.TEST_DATABASE_OWNER_URL ?? testDb('crm_owner'),
       RUN_WORKER: 'false',
+      EMAIL_DELIVERY: 'memory',
+      WEB_ORIGIN: 'http://localhost:5173',
     },
   },
 })
