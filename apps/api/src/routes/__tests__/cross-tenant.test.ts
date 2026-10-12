@@ -132,7 +132,7 @@ function urlsFor(url: string): string[] {
   return candidates.map((id) => url.replace(`:${param}`, id))
 }
 
-const SKIP = new Set(['OPTIONS *', 'GET /', 'GET /api/auth/*', 'POST /api/auth/*', 'POST /api/workspaces', 'POST /api/workspaces/switch', 'DELETE /api/workspace', 'PATCH /api/me', 'GET /api/debug/error'])
+const SKIP = new Set(['OPTIONS *', 'GET /', 'GET /api/auth/*', 'POST /api/auth/*', 'POST /api/workspaces', 'POST /api/workspaces/switch', 'DELETE /api/workspace', 'PATCH /api/me'])
 
 describe('cross-workspace attack over every route', () => {
   it("never returns or changes another workspace's data", async () => {

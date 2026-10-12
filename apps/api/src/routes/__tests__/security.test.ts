@@ -54,3 +54,28 @@ describe('limits', () => {
     expect(row!.statement_timeout).toBe('15s')
   })
 })
+
+describe('cross-site requests', () => {
+  it('refuses changes without our Origin or Referer, even with a valid session', async () => {
+    const { owner } = await setup()
+    const inject = (headers: Record<string, string>) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/contacts',
+        headers: { 'content-type': 'application/json', cookie: owner.cookieHeader(), ...headers },
+        payload: JSON.stringify({ firstName: 'Utan ursprung' }),
+      })
+    expect((await inject({})).statusCode).toBe(403)
+    expect((await inject({ origin: 'https://evil.example' })).statusCode).toBe(403)
+    expect((await inject({ referer: 'https://evil.example/page' })).statusCode).toBe(403)
+    expect((await inject({ referer: 'http://localhost:5173/contacts' })).statusCode).toBe(201)
+  })
+})
+
+describe('public surface', () => {
+  it('the health check says nothing about environment or version, and there is no debug route', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/health' })
+    expect(Object.keys(res.json()).sort()).toEqual(['db', 'status'])
+    expect((await app.inject({ method: 'GET', url: '/api/debug/error' })).statusCode).toBe(404)
+  })
+})

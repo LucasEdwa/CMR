@@ -16,7 +16,6 @@ const RULES: Record<string, Rule> = {
   'POST /api/auth/*': 'public',
   'GET /api/invitations/:token': 'public',
   'POST /api/invitations/:token/accept': 'public',
-  'GET /api/debug/error': 'public',
 
   // Logged in, no workspace needed.
   'GET /api/me': 'user',

@@ -26,6 +26,12 @@ export const env = envSchema.parse(process.env)
 if (['staging', 'production'].includes(env.APP_ENV) && env.BETTER_AUTH_SECRET.startsWith('dev-only')) {
   throw new Error('BETTER_AUTH_SECRET must be set outside development')
 }
+// Outside development the database is reached over the internet: insist on TLS.
+if (['staging', 'production'].includes(env.APP_ENV)) {
+  for (const [name, url] of [['DATABASE_URL', env.DATABASE_URL], ['DATABASE_OWNER_URL', env.DATABASE_OWNER_URL]] as const) {
+    if (!/[?&]sslmode=(require|verify-ca|verify-full)\b/.test(url)) throw new Error(`${name} must use TLS (sslmode=verify-full or require)`)
+  }
+}
 // Trusting every X-Forwarded-For would let anyone pick their own IP and slip past login limits.
 export function trustProxySetting(): boolean | string[] | ((address: string, hop: number) => boolean) {
   const value = env.TRUST_PROXY ?? (['development', 'test'].includes(env.APP_ENV) ? 'true' : undefined)

@@ -11,6 +11,14 @@ export function initSentry() {
     tracesSampleRate: 0.1,
     // CRM screens show personal data: no session replay, no user info.
     dataCollection: { userInfo: false },
+    // URLs carry search terms and filters (names, emails): keep only the path.
+    beforeBreadcrumb(crumb) {
+      const strip = (url: unknown) => (typeof url === 'string' ? url.split('?')[0] : url)
+      if (crumb.data) {
+        for (const key of ['url', 'from', 'to']) if (key in crumb.data) crumb.data[key] = strip(crumb.data[key])
+      }
+      return crumb
+    },
   })
 }
 

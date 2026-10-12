@@ -57,3 +57,13 @@ describe('createTaskSchema', () => {
     expect(createTaskSchema.safeParse({ title: 'x', dueDate: '2026-11-09', dueTime: '24:00' }).success).toBe(false)
   })
 })
+
+describe('rich text depth', () => {
+  it('rejects documents nested deeper than real notes ever are', () => {
+    let node: Record<string, unknown> = { type: 'paragraph', content: [{ type: 'text', text: 'x' }] }
+    for (let i = 0; i < 5000; i++) node = { type: 'bulletList', content: [{ type: 'listItem', content: [node] }] }
+    expect(richDocSchema.safeParse({ type: 'doc', content: [node] }).success).toBe(false)
+    const shallow = { type: 'doc', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ok' }] }] }] }] }
+    expect(richDocSchema.safeParse(shallow).success).toBe(true)
+  })
+})

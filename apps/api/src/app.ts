@@ -27,6 +27,16 @@ declare module 'fastify' {
   }
 }
 
+function requestOrigin(headers: Record<string, string | string[] | undefined>) {
+  if (typeof headers.origin === 'string') return headers.origin
+  if (typeof headers.referer !== 'string') return null
+  try {
+    return new URL(headers.referer).origin
+  } catch {
+    return null
+  }
+}
+
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 
 export async function buildApp() {
@@ -69,10 +79,10 @@ export async function buildApp() {
 
   // CSRF: the session is a cookie, so state-changing requests from a browser must come from our
   // own origin. Better Auth checks its own routes; this covers the rest of the API.
+  // A request without Origin (or Referer) is refused too, so this does not rest on browser habits.
   app.addHook('onRequest', async (request) => {
     if (SAFE_METHODS.has(request.method) || request.url.startsWith('/api/auth/')) return
-    const origin = request.headers.origin
-    if (origin && origin !== env.WEB_ORIGIN) throw new HttpError(403, 'invalid_origin', 'Request origin not allowed')
+    if (requestOrigin(request.headers) !== env.WEB_ORIGIN) throw new HttpError(403, 'invalid_origin', 'Request origin not allowed')
   })
 
   // API responses are one user's view of one workspace: never cache them in browsers or proxies
@@ -99,7 +109,8 @@ export async function buildApp() {
       await api.register(dealRoutes)
       await api.register(activityRoutes)
       await api.register(dataRoutes)
-      if (env.APP_ENV !== 'production') await api.register(debugRoutes)
+      // Only on a developer's machine: anywhere else it would let anyone flood Sentry.
+      if (env.APP_ENV === 'development') await api.register(debugRoutes)
     },
     { prefix: '/api' },
   )
