@@ -1,0 +1,25 @@
+{
+  "name": "crm",
+  "private": true,
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @crm/web test:e2e",
+    "db:setup": "pnpm --filter @crm/api db:setup",
+    "db:migrate": "pnpm --filter @crm/api db:migrate",
+    "db:generate": "pnpm --filter @crm/api db:generate",
+    "seed": "pnpm --filter @crm/api seed",
+    "seed:large": "pnpm --filter @crm/api seed:large"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.7",
+    "typescript": "~6.0.3"
+  }
+}
