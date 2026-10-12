@@ -68,7 +68,10 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 - API responses are `Cache-Control: no-store`; request logs keep the path only (query strings carry names and emails).
 - Email jobs (which contain login and invitation links) are deleted a minute after sending.
 - The web app sends a strict Content-Security-Policy and other security headers (`apps/web/vercel.json`); notes are never rendered as HTML.
-- Still to do before go-live (Sprint 9): retention for audit diffs and import error rows, signup email enumeration, two-factor login, and an outside security review.
+- Accounts: passwords of at least 10 characters that are not in known breaches, two-factor login (a workspace can require it), sessions that expire after 3 idle days and 30 days at most, and a security log per user. Deleting a workspace needs the owner's password and waits 7 days so any owner can cancel.
+- Limits per user and per workspace on exports, search, imports, bulk changes and the dashboard; every export is in the audit log; queries stop after 15 s.
+- CI runs `pnpm audit`, gitleaks and Semgrep; actions and scanner images are pinned. Dependabot proposes updates after a 14-day cooldown.
+- Incidents: `docs/incident-runbook.md`. Before go-live: real contact in `apps/web/public/.well-known/security.txt`, retention for audit diffs and import error rows, and an outside security review.
 
 ## Auth
 
