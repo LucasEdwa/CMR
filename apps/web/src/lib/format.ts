@@ -34,3 +34,11 @@ export function formatWithPattern(date: Date, pattern: string, timeZone = DEFAUL
   if (pattern === 'd MMM yyyy') return `${Number(day)} ${MONTHS_SV[Number(month) - 1]} ${year}`
   return `${year}-${month}-${day}`
 }
+
+// A calendar date (yyyy-mm-dd, no timezone) with an optional wall-clock time, e.g. "mån 9 nov 15:30".
+export function formatDueDate(date: string, time: string | null, lang: string) {
+  const day = new Intl.DateTimeFormat(localeFor(lang), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00Z`),
+  )
+  return time ? `${day} ${time}` : day
+}

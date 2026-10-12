@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { meSchema, type Role } from '@crm/shared'
+import { meSchema, workspaceSchema, type Role } from '@crm/shared'
 import { api, ApiRequestError } from '@/lib/api'
 import i18n, { setLanguage } from '@/lib/i18n'
 
@@ -34,4 +34,11 @@ export function useActiveWorkspace() {
 export function useResetSession() {
   const queryClient = useQueryClient()
   return () => queryClient.resetQueries()
+}
+
+// The timezone "today" and due times follow: the user's own, else the workspace's.
+export function useTimezone() {
+  const { data: me } = useMe()
+  const workspace = useQuery({ queryKey: ['workspace'], queryFn: () => api('/workspace', workspaceSchema), staleTime: 60_000 })
+  return me?.user.timezone ?? workspace.data?.timezone ?? 'Europe/Stockholm'
 }
