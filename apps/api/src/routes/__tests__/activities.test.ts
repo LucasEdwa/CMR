@@ -326,6 +326,17 @@ describe('task reminders', () => {
     expect(inbox.items[0].actor).toBeNull()
   })
 
+  it('sends nothing to someone who was removed from the workspace', async () => {
+    const { owner, ws } = await setup()
+    const erik = await addMember(app, owner, 'member', 'Erik')
+    const task = await expectStatus(owner.post('/api/tasks', { title: 'Hemligt', dueDate: stockholmDate(0), assigneeUserId: erik.userId }), 201)
+    await expectStatus(owner.delete(`/api/workspace/members/${erik.userId}`), 200)
+    const ctx = { tenantId: ws.id, userId: erik.userId, role: 'system' as const }
+    const before = outbox.length
+    expect(await withTenant(ctx, (tx) => sendTaskReminder(tx, { tenantId: ws.id, userId: erik.userId, taskId: task.id, dueDate: task.dueDate }))).toBe(false)
+    expect(outbox.slice(before).filter((m) => m.to === erik.email)).toEqual([])
+  })
+
   it('skips completed, reassigned and rescheduled tasks', async () => {
     const { owner, ownerId, ws } = await setup()
     const erik = await addMember(app, owner, 'member', 'Erik')

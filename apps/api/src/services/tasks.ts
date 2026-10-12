@@ -13,7 +13,7 @@ import {
 } from '@crm/shared'
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
-import { companies, contacts, deals, tasks, tenants, users } from '../db/schema.js'
+import { companies, contacts, deals, memberships, tasks, tenants, users } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { sendEmail } from '../email/send.js'
 import { emails } from '../email/templates.js'
@@ -226,6 +226,9 @@ export async function sendTaskReminder(tx: Tx, job: ReminderJob) {
     ),
   )
   if (!row) return false
+  // Someone removed from the workspace gets nothing more about its tasks.
+  const [member] = await tx.select({ id: memberships.id }).from(memberships).where(eq(memberships.userId, job.userId))
+  if (!member) return false
   const [claimed] = await tx
     .update(tasks)
     .set({ reminderSentFor: job.dueDate })
