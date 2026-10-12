@@ -47,9 +47,19 @@ export const richNodeSchema: z.ZodType<RichNode> = z.lazy(() =>
 )
 
 export const MAX_RICH_TEXT_CHARS = 20_000
+// Real notes nest a few levels (a list in a list). The limit keeps validation cheap.
+export const MAX_RICH_TEXT_DEPTH = 12
+
+function depthOf(value: unknown, depth = 0): number {
+  if (depth > MAX_RICH_TEXT_DEPTH) return depth
+  const content = (value as { content?: unknown })?.content
+  return Array.isArray(content) ? Math.max(depth, ...content.map((c) => depthOf(c, depth + 1))) : depth
+}
 
 export const richDocSchema = z
-  .object({ type: z.literal('doc'), content: z.array(richNodeSchema).max(500) })
+  // Checked before the recursive schema runs, so a deeply nested document is rejected cheaply.
+  .custom<unknown>((v) => depthOf(v) <= MAX_RICH_TEXT_DEPTH, 'too_deep')
+  .pipe(z.object({ type: z.literal('doc'), content: z.array(richNodeSchema).max(500) }))
   .refine((doc) => richTextToPlain(doc).length <= MAX_RICH_TEXT_CHARS, 'too_long')
 
 function walk(nodes: RichNode[] | undefined, visit: (node: RichNode) => void) {

@@ -42,6 +42,10 @@ export const tenants = pgTable('tenants', {
   dateFormat: text('date_format').notNull().default('yyyy-MM-dd'),
   // An open deal with no activity for this many days is shown as stale.
   staleDealDays: integer('stale_deal_days').notNull().default(DEFAULT_STALE_DAYS),
+  // Members and viewers only see contacts, companies and deals they own (enforced in RLS).
+  ownRecordsOnly: boolean('own_records_only').notNull().default(false),
+  // Everyone in the workspace must use two-factor login (set by owners and admins).
+  requireTwoFactor: boolean('require_two_factor').notNull().default(false),
   ...timestamps,
 })
 
@@ -59,6 +63,8 @@ export const users = pgTable(
     locale: text('locale').notNull().default('sv'),
     // IANA name; null means the workspace timezone. Drives "today" and reminder times.
     timezone: text('timezone'),
+    // Set by Better Auth's two-factor plugin once an authenticator app is confirmed.
+    twoFactorEnabled: boolean('two_factor_enabled').notNull().default(false),
     ...timestamps,
   },
   (t) => [uniqueIndex('users_email_lower_idx').on(sql`lower(${t.email})`)],
@@ -123,6 +129,23 @@ export const rateLimits = pgTable('rate_limits', {
 })
 
 // Failed logins per IP + email; cleared on a successful login.
+// TOTP secrets and backup codes (Better Auth encrypts both with BETTER_AUTH_SECRET).
+export const twoFactors = pgTable(
+  'two_factors',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    secret: text('secret').notNull(),
+    backupCodes: text('backup_codes').notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    verified: boolean('verified').notNull().default(true),
+    failedVerificationCount: integer('failed_verification_count').notNull().default(0),
+    lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  },
+  (t) => [index('two_factors_user_idx').on(t.userId), index('two_factors_secret_idx').on(t.secret)],
+)
+
 export const loginFailures = pgTable('login_failures', {
   key: text('key').primaryKey(),
   count: integer('count').notNull(),
@@ -691,4 +714,22 @@ export const recentViews = pgTable(
     primaryKey({ columns: [t.tenantId, t.userId, t.recordType, t.recordId] }),
     index('recent_views_user_idx').on(t.tenantId, t.userId, t.viewedAt.desc()),
   ],
+)
+
+// ---------------------------------------------------------------------------
+// Account security log: logins, password and 2FA changes. Per user, not per workspace, so it has
+// no tenant_id; RLS lets each user read only their own events (see the migration).
+export const securityEvents = pgTable(
+  'security_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('security_events_user_idx').on(t.userId, t.createdAt.desc())],
 )

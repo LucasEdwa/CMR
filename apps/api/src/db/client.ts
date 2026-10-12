@@ -11,5 +11,7 @@ export function createDb(url: string, options: postgres.Options<Record<string, n
 export type Db = ReturnType<typeof createDb>['db']
 export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
-// The app always connects as app_user, which is subject to RLS.
-export const { client: appClient, db } = createDb(env.DATABASE_URL)
+// The app always connects as app_user, which is subject to RLS. No query may run longer than
+// 15 s and no transaction may sit idle: one workspace's heavy query cannot hold up the others.
+export const APP_CONNECTION = { statement_timeout: 15_000, idle_in_transaction_session_timeout: 60_000 }
+export const { client: appClient, db } = createDb(env.DATABASE_URL, { connection: APP_CONNECTION })

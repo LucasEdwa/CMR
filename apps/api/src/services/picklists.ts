@@ -4,20 +4,21 @@ import { DEFAULT_PICKLISTS, PICKLIST_KINDS, slugify, type PicklistKind, type Pic
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
 import { picklistItems } from '../db/schema.js'
-import type { TenantContext } from '../db/tenant.js'
+import { asSystem, type TenantContext } from '../db/tenant.js'
 
 // Built-in items are inserted the first time a workspace reads its picklists.
 async function ensureDefaults(tx: Tx, ctx: TenantContext) {
   const [any] = await tx.select({ id: picklistItems.id }).from(picklistItems).limit(1)
   if (any) return
-  await tx
+  // Any role may read the lists first; inserting the built-ins is the app's own setup work.
+  await asSystem(tx, ctx, () => tx
     .insert(picklistItems)
     .values(
       PICKLIST_KINDS.flatMap((kind) =>
         DEFAULT_PICKLISTS[kind].map((key, position) => ({ tenantId: ctx.tenantId, kind, key, label: null, position })),
       ),
     )
-    .onConflictDoNothing()
+    .onConflictDoNothing())
 }
 
 export async function getPicklists(tx: Tx, ctx: TenantContext): Promise<Picklists> {

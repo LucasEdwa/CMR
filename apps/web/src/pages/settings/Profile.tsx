@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Field } from '@/components/Field'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { NativeSelect } from '@/components/NativeSelect'
+import { AccountSecurity } from '@/components/security/AccountSecurity'
 import { ME_KEY, useMe } from '@/hooks/useMe'
 import { send } from '@/lib/api'
 import { errorMessage } from '@/lib/errors'
@@ -80,6 +81,7 @@ export function Profile() {
           {t('settings.timezoneHint')}
         </p>
       </section>
+      <AccountSecurity />
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { localeSchema } from '@crm/shared'
+import { MIN_PASSWORD_LENGTH, localeSchema } from '@crm/shared'
+import { haveIBeenPwned, twoFactor } from 'better-auth/plugins'
 import { db } from '../db/client.js'
-import { accounts, rateLimits, sessions, users, verifications } from '../db/schema.js'
+import { accounts, rateLimits, sessions, twoFactors, users, verifications } from '../db/schema.js'
 import { env } from '../env.js'
 import { emails } from '../email/templates.js'
 import { sendEmail } from '../email/send.js'
@@ -18,9 +19,16 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.WEB_ORIGIN],
   telemetry: { enabled: false },
+  // Signup, password reset and password change reject passwords from known breaches.
+  plugins: [
+    haveIBeenPwned({ enabled: env.PASSWORD_BREACH_CHECK }),
+    // Authenticator-app codes (TOTP) with ten single-use backup codes. Enabling needs the password
+    // and a first valid code; secrets and backup codes are stored encrypted.
+    twoFactor({ issuer: 'CRM', backupCodeOptions: { amount: 10 } }),
+  ],
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: { users, sessions, accounts, verifications, rateLimits },
+    schema: { users, sessions, accounts, verifications, rateLimits, twoFactor: twoFactors },
   }),
   user: {
     modelName: 'users',
@@ -30,8 +38,10 @@ export const auth = betterAuth({
   },
   session: {
     modelName: 'sessions',
-    expiresIn: 60 * 60 * 24 * 14,
-    updateAge: 60 * 60 * 24,
+    // Sliding: a session not used for 3 days expires. Every session also ends after
+    // SESSION_MAX_AGE_DAYS no matter what (checked in auth/context.ts).
+    expiresIn: 60 * 60 * 24 * 3,
+    updateAge: 60 * 60 * 12,
     additionalFields: {
       activeTenantId: { type: 'string', required: false, input: false },
     },
@@ -62,7 +72,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 8,
+    minPasswordLength: MIN_PASSWORD_LENGTH,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
     resetPasswordTokenExpiresIn: 60 * 60,

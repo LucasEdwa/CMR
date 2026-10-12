@@ -113,6 +113,48 @@
       "when": 1791830160562,
       "tag": "0015_imports_recent_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791831960481,
+      "tag": "0016_own_records_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791831961299,
+      "tag": "0017_role_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791833582324,
+      "tag": "0018_workspace_scoped_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791835344911,
+      "tag": "0019_security_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791835345754,
+      "tag": "0020_security_events_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791835374912,
+      "tag": "0021_two_factor",
+      "breakpoints": true
     }
   ]
 }

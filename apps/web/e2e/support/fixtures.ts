@@ -2,6 +2,9 @@ import { test as base, expect, type Browser, type Page } from '@playwright/test'
 import { randomInt, randomUUID } from 'node:crypto'
 
 export const SEED_PASSWORD = 'Password123!'
+// New accounts need passwords that are not in any breach list (the API checks Have I Been Pwned).
+export const NEW_PASSWORD = 'Kvarnen-Sjövik-Hägg-2026'
+export const OTHER_PASSWORD = 'Älvdal-Granskog-Bro-2027'
 export const BASE_ORIGIN = new URL(process.env.E2E_BASE_URL ?? 'http://localhost:5173').origin
 
 export const users = {
@@ -51,7 +54,7 @@ export async function loginThroughForm(page: Page, email: string, password = SEE
 export async function freshCompany(page: Page, name: string) {
   const email = uniqueEmail('owner')
   await page.request.post('/api/auth/sign-up/email', {
-    data: { name: 'Olle Owner', email, password: 'Secret123!' },
+    data: { name: 'Olle Owner', email, password: NEW_PASSWORD },
     headers: { origin: BASE_ORIGIN },
   })
   const { linkFromEmail } = await import('./mailpit.ts')
@@ -79,7 +82,7 @@ export async function colleague(owner: Page, browser: Browser, name: string, rol
   const context = await browser.newContext({ locale: 'sv-SE', timezoneId: 'Europe/Stockholm', extraHTTPHeaders: { 'x-forwarded-for': randomIp() } })
   const page = await context.newPage()
   const res = await page.request.post(`${BASE_ORIGIN}/api/invitations/${token}/accept`, {
-    data: { name, password: 'Secret123!' },
+    data: { name, password: NEW_PASSWORD },
     headers: { origin: BASE_ORIGIN },
   })
   expect(res.status(), await res.text()).toBe(200)

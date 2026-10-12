@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { HistoryLink } from '@/components/records/HistoryLink'
 import { ConfirmDialog } from '@/components/records/ConfirmDialog'
 import { DetailList, RecordNotFound } from '@/components/records/DetailParts'
 import { useActiveWorkspace } from '@/hooks/useMe'
@@ -86,6 +87,7 @@ export function DealDetail() {
         </div>
         {canWrite && (
           <div className="flex flex-wrap gap-2">
+            <HistoryLink record={{ type: 'deal', id: d.id }} />
             {open ? (
               <>
                 <Button onClick={() => run(() => dealApi.won(d.id), t('deals.wonToast'))} disabled={act.isPending}>

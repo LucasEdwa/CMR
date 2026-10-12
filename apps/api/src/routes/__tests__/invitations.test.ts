@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { buildApp } from '../../app.js'
 import { invitations } from '../../db/schema.js'
-import { withTenantOnly } from '../../db/tenant.js'
+import { asSystemIn } from '../../test/factories.js'
 import { TestClient, createWorkspace, lastLinkTo, signUpVerified, uniqueEmail } from '../../test/client.js'
 
 let app: FastifyInstance
@@ -62,7 +62,7 @@ describe('invitations', () => {
     const { owner, ws } = await ownerWithWorkspace()
     const email = uniqueEmail('expired')
     const { id } = (await owner.post('/api/workspace/invitations', { email, role: 'member' })).json()
-    await withTenantOnly(ws.id, (tx) =>
+    await asSystemIn(ws.id, (tx) =>
       tx.update(invitations).set({ expiresAt: new Date(Date.now() - 1000) }).where(eq(invitations.id, id)),
     )
     const res = await new TestClient(app).get(`/api/invitations/${inviteToken(email)}`)

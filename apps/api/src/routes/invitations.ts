@@ -1,7 +1,12 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { createHash, randomBytes } from 'node:crypto'
 import { and, eq, gt, isNull, sql } from 'drizzle-orm'
 import { fromNodeHeaders } from 'better-auth/node'
+import { hashPassword } from 'better-auth/crypto'
+import { withClientIp } from './auth.js'
+import { assertPasswordNotBreached } from '../auth/breached.js'
+import { recordSecurityEvent } from '../auth/security-log.js'
+import { limit } from '../http/limits.js'
 import {
   acceptInvitationSchema,
   inviteSchema,
@@ -78,13 +83,7 @@ export async function invitationRoutes(app: FastifyInstance) {
     '/workspace/invitations',
     {
       preHandler: inWorkspace(MANAGERS),
-      config: {
-        rateLimit: {
-          max: 30,
-          timeWindow: '1 hour',
-          keyGenerator: (request: FastifyRequest) => `invite:${request.tenant?.tenantId ?? request.ip}`,
-        },
-      },
+      config: limit('invite', 30, '1 hour', 'workspace'),
     },
     async (request, reply) => {
       const ctx = requireTenant(request, MANAGERS)
@@ -197,6 +196,7 @@ export async function invitationRoutes(app: FastifyInstance) {
       if (!input.name || !input.password) {
         throw new HttpError(400, 'validation_error', 'Name and password are required')
       }
+      await assertPasswordNotBreached(input.password)
       // Opening the emailed link proves the address, so the new account starts verified.
       const ctx = await auth.$context
       const user = await ctx.internalAdapter.createUser({
@@ -209,20 +209,24 @@ export async function invitationRoutes(app: FastifyInstance) {
         userId: user.id,
         providerId: 'credential',
         accountId: user.id,
-        password: await ctx.password.hash(input.password),
+        // Hashed directly: the breach check above already ran, and Better Auth's wrapped hasher
+        // only works inside its own endpoints.
+        password: await hashPassword(input.password),
       })
       const signIn = await auth.api.signInEmail({
         body: { email: invitation.email, password: input.password },
-        headers: fromNodeHeaders(request.headers),
+        headers: withClientIp(fromNodeHeaders(request.headers), request.ip),
         returnHeaders: true,
       })
       reply.header('set-cookie', signIn.headers.getSetCookie())
       userId = user.id
+      await recordSecurityEvent(request, user.id, 'login')
       const [created] = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.token, signIn.response.token))
       sessionId = created?.id
     }
 
-    const ctx: TenantContext = { tenantId, userId, role: invitation.role }
+    // The token was checked above, so the membership is created with the 'system' role.
+    const ctx: TenantContext = { tenantId, userId, role: 'system' }
     await withTenant(ctx, async (tx) => {
       // Atomic single use: a second accept (or a race) finds nothing to update.
       const [accepted] = await tx

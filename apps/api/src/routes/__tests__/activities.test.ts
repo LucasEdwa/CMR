@@ -4,7 +4,8 @@ import { eq, sql } from 'drizzle-orm'
 import { plainToRichDoc, type Activity, type MyTasks, type RichDoc, type Task } from '@crm/shared'
 import { buildApp } from '../../app.js'
 import { activities, contacts, deals, tasks } from '../../db/schema.js'
-import { withTenant, withTenantOnly } from '../../db/tenant.js'
+import { withTenant } from '../../db/tenant.js'
+import { asSystemIn } from '../../test/factories.js'
 import { outbox } from '../../email/send.js'
 import { purgeRecord } from '../../services/purge.js'
 import { sendTaskReminder } from '../../services/tasks.js'
@@ -80,7 +81,7 @@ describe('activities', () => {
 
   it('logging an activity on a stale deal makes it fresh again', async () => {
     const { owner, ws, deal } = await setup()
-    await withTenantOnly(ws.id, (tx) => tx.update(deals).set({ lastActivityAt: new Date('2026-01-01') }).where(eq(deals.id, deal.id)))
+    await asSystemIn(ws.id, (tx) => tx.update(deals).set({ lastActivityAt: new Date('2026-01-01') }).where(eq(deals.id, deal.id)))
     expect((await expectStatus(owner.get(`/api/deals/${deal.id}`), 200)).stale).toBe(true)
     await expectStatus(owner.post('/api/activities', { type: 'meeting', record: { type: 'deal', id: deal.id }, subject: 'Demo' }), 201)
     expect((await expectStatus(owner.get(`/api/deals/${deal.id}`), 200)).stale).toBe(false)
@@ -323,6 +324,17 @@ describe('task reminders', () => {
     const inbox = await expectStatus(erik.client.get('/api/notifications'), 200)
     expect(inbox.items.map((n: { type: string }) => n.type)).toEqual(['task_reminder', 'task_assigned'])
     expect(inbox.items[0].actor).toBeNull()
+  })
+
+  it('sends nothing to someone who was removed from the workspace', async () => {
+    const { owner, ws } = await setup()
+    const erik = await addMember(app, owner, 'member', 'Erik')
+    const task = await expectStatus(owner.post('/api/tasks', { title: 'Hemligt', dueDate: stockholmDate(0), assigneeUserId: erik.userId }), 201)
+    await expectStatus(owner.delete(`/api/workspace/members/${erik.userId}`), 200)
+    const ctx = { tenantId: ws.id, userId: erik.userId, role: 'system' as const }
+    const before = outbox.length
+    expect(await withTenant(ctx, (tx) => sendTaskReminder(tx, { tenantId: ws.id, userId: erik.userId, taskId: task.id, dueDate: task.dueDate }))).toBe(false)
+    expect(outbox.slice(before).filter((m) => m.to === erik.email)).toEqual([])
   })
 
   it('skips completed, reassigned and rescheduled tasks', async () => {

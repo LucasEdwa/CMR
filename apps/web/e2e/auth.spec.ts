@@ -1,4 +1,4 @@
-import { expect, loginThroughForm, test, uniqueEmail, users } from './support/fixtures.ts'
+import { expect, loginThroughForm, test, uniqueEmail, users, NEW_PASSWORD, OTHER_PASSWORD } from './support/fixtures.ts'
 import { linkFromEmail } from './support/mailpit.ts'
 
 test('sign up, verify by email, create a company and land in an empty app', async ({ page }) => {
@@ -6,7 +6,7 @@ test('sign up, verify by email, create a company and land in an empty app', asyn
   await page.goto('/signup')
   await page.getByLabel('Namn').fill('Nora Nyström')
   await page.getByLabel('E-post').fill(email)
-  await page.getByLabel('Lösenord').fill('Secret123!')
+  await page.getByLabel('Lösenord').fill(NEW_PASSWORD)
   await page.getByRole('button', { name: 'Skapa konto' }).click()
   await expect(page.getByRole('heading', { name: 'Kolla din inkorg' })).toBeVisible()
 
@@ -23,6 +23,15 @@ test('sign up, verify by email, create a company and land in an empty app', asyn
   await expect(page.getByRole('button', { name: 'Byt företag' })).toContainText('Nyström & Co AB')
 })
 
+test('signup refuses a password that has leaked in a breach', async ({ page }) => {
+  await page.goto('/signup')
+  await page.getByLabel('Namn').fill('Lars Läckt')
+  await page.getByLabel('E-post').fill(uniqueEmail('breached'))
+  await page.getByLabel('Lösenord').fill('Password123!')
+  await page.getByRole('button', { name: 'Skapa konto' }).click()
+  await expect(page.getByText('Det lösenordet har läckt vid ett dataintrång någon annanstans. Välj ett annat.')).toBeVisible()
+})
+
 test('logged out, app URLs redirect to login and come back after logging in', async ({ page }) => {
   await page.goto('/settings/members')
   await expect(page).toHaveURL(/\/login\?next=%2Fsettings%2Fmembers/)
@@ -35,7 +44,7 @@ test('password reset works end to end', async ({ page }) => {
   // Use a fresh account so the seed users keep their password.
   const email = uniqueEmail('reset')
   await page.request.post('/api/auth/sign-up/email', {
-    data: { name: 'Rut Reset', email, password: 'OldPassword1!' },
+    data: { name: 'Rut Reset', email, password: NEW_PASSWORD },
     headers: { origin: 'http://localhost:5173' },
   })
   await page.goto(await linkFromEmail(email, '/verify-email'))
@@ -48,14 +57,14 @@ test('password reset works end to end', async ({ page }) => {
   await expect(page.getByText(`Om det finns ett konto för ${email}`)).toBeVisible()
 
   await page.goto(await linkFromEmail(email, '/reset-password'))
-  await page.getByLabel('Nytt lösenord').fill('NewPassword2!')
+  await page.getByLabel('Nytt lösenord').fill(OTHER_PASSWORD)
   await page.getByRole('button', { name: 'Spara lösenord' }).click()
   await expect(page.getByText('Lösenordet är ändrat')).toBeVisible()
 
   await page.getByRole('link', { name: 'Logga in' }).click()
-  await loginThroughForm(page, email, 'OldPassword1!')
+  await loginThroughForm(page, email, NEW_PASSWORD)
   await expect(page.getByText('Fel e-post eller lösenord.')).toBeVisible()
-  await loginThroughForm(page, email, 'NewPassword2!')
+  await loginThroughForm(page, email, OTHER_PASSWORD)
   await expect(page).toHaveURL(/\/onboarding$/)
 })
 

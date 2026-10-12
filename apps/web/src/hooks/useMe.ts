@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { meSchema, workspaceSchema, type Role } from '@crm/shared'
 import { api, ApiRequestError } from '@/lib/api'
 import i18n, { setLanguage } from '@/lib/i18n'
@@ -41,4 +41,20 @@ export function useTimezone() {
   const { data: me } = useMe()
   const workspace = useQuery({ queryKey: ['workspace'], queryFn: () => api('/workspace', workspaceSchema), staleTime: 60_000 })
   return me?.user.timezone ?? workspace.data?.timezone ?? 'Europe/Stockholm'
+}
+
+// Cached data belongs to one user in one workspace. If either changes in any way (a switch, a
+// removal that moved the session to another workspace, another login), drop everything else
+// so nothing from the previous workspace is shown.
+export function useWorkspaceCacheGuard() {
+  const { data } = useMe()
+  const queryClient = useQueryClient()
+  const scope = data ? `${data.user.id}:${data.activeWorkspaceId}` : null
+  const previous = useRef(scope)
+  useEffect(() => {
+    if (scope && previous.current && previous.current !== scope) {
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== ME_KEY[0] })
+    }
+    if (scope) previous.current = scope
+  }, [scope, queryClient])
 }

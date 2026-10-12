@@ -192,3 +192,53 @@ export const savePicklistSchema = z.object({
     .max(50)
     .refine((items) => items.every((i) => i.key || i.label), 'label_required'),
 })
+
+// ---- dashboard -------------------------------------------------------------------------
+
+export const DASHBOARD_PERIODS = ['this_month', 'last_month', 'this_quarter', 'this_year', 'last_30_days'] as const
+export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number]
+
+export const dashboardQuerySchema = z.object({
+  period: z.enum(DASHBOARD_PERIODS).default('this_month'),
+  // A member's user id, "me", or nothing for everyone.
+  owner: z.union([z.uuid(), z.literal('me')]).optional(),
+  pipelineId: z.uuid().optional(),
+})
+
+const money = z.number().int()
+export const dashboardSchema = z.object({
+  // [from, to) as dates in the workspace timezone.
+  period: z.object({ key: z.enum(DASHBOARD_PERIODS), from: z.string(), to: z.string() }),
+  currency: z.enum(CURRENCIES),
+  pipeline: z.object({
+    id: z.uuid(),
+    name: z.string(),
+    stages: z.array(z.object({ id: z.uuid(), name: z.string(), probability: z.number().int(), count: z.number().int(), value: money, weighted: money })),
+    count: z.number().int(),
+    value: money,
+    weighted: money,
+    // Open deals in other currencies are counted but not summed.
+    otherCurrencyCount: z.number().int(),
+  }),
+  won: z.object({ count: z.number().int(), value: money }),
+  lost: z.object({ count: z.number().int(), value: money }),
+  // Won / (won + lost) in the period; null when nothing closed.
+  winRate: z.number().nullable(),
+  newDeals: z.number().int(),
+  lostReasons: z.array(z.object({ reason: z.string().nullable(), count: z.number().int() })),
+  activities: z.array(
+    z.object({
+      user: z.object({ id: z.uuid(), name: z.string() }),
+      note: z.number().int(),
+      call: z.number().int(),
+      meeting: z.number().int(),
+      email: z.number().int(),
+      total: z.number().int(),
+    }),
+  ),
+  overdueTasks: z.object({
+    count: z.number().int(),
+    items: z.array(z.object({ id: z.uuid(), title: z.string(), dueDate: z.string(), assignee: z.string().nullable(), record: z.object({ type: z.enum(['contact', 'company', 'deal']), id: z.uuid(), name: z.string() }).nullable() })),
+  }),
+})
+export type Dashboard = z.infer<typeof dashboardSchema>

@@ -14,7 +14,7 @@ export async function startWorker() {
   await boss.start()
 
   await workTenant(boss, QUEUES.ping, async (tx, data) => {
-    await audit(tx, { tenantId: data.tenantId, userId: data.userId, role: 'member' }, {
+    await audit(tx, { tenantId: data.tenantId, userId: data.userId, role: 'system' }, {
       action: 'ping',
       entityType: 'system',
     })

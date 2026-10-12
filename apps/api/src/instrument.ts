@@ -9,5 +9,11 @@ if (process.env.SENTRY_DSN) {
     tracesSampleRate: 0.1,
     // CRM requests carry personal data: never send bodies, cookies or user info to Sentry.
     dataCollection: { userInfo: false, cookies: false, httpBodies: [] },
+    // Failed-query messages list the query's values (customer data): keep only the SQL.
+    beforeSend(event) {
+      for (const ex of event.exception?.values ?? []) if (ex.value) ex.value = ex.value.replace(/\nparams:[\s\S]*$/, '\nparams: [redacted]')
+      if (event.message) event.message = event.message.replace(/\nparams:[\s\S]*$/, '\nparams: [redacted]')
+      return event
+    },
   })
 }

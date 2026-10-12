@@ -1,11 +1,11 @@
 import type { Browser, Page } from '@playwright/test'
-import { expect, loginAs, test, uniqueEmail, users } from './support/fixtures.ts'
+import { expect, loginAs, test, uniqueEmail, users, NEW_PASSWORD } from './support/fixtures.ts'
 import { linkFromEmail } from './support/mailpit.ts'
 
 async function newCompany(page: Page, name: string) {
   const email = uniqueEmail('owner')
   await page.request.post('/api/auth/sign-up/email', {
-    data: { name: 'Olle Owner', email, password: 'Secret123!' },
+    data: { name: 'Olle Owner', email, password: NEW_PASSWORD },
     headers: { origin: 'http://localhost:5173' },
   })
   await page.goto(await linkFromEmail(email, '/verify-email'))
@@ -41,7 +41,7 @@ test('invite a colleague as Member; they accept in another browser and both see 
   await guest.goto(link)
   await expect(guest.getByRole('heading', { name: 'Gå med i Inbjudningstest AB' })).toBeVisible()
   await guest.getByLabel('Namn').fill('Maja Medlem')
-  await guest.getByLabel('Lösenord').fill('Secret123!')
+  await guest.getByLabel('Lösenord').fill(NEW_PASSWORD)
   await guest.getByRole('button', { name: 'Skapa konto och gå med' }).click()
   await expect(guest.getByRole('button', { name: 'Byt företag' })).toContainText('Inbjudningstest AB')
 
@@ -57,7 +57,7 @@ test('a used invitation link is rejected', async ({ page, browser }) => {
   const first = await otherBrowser(browser)
   await first.goto(link)
   await first.getByLabel('Namn').fill('Första')
-  await first.getByLabel('Lösenord').fill('Secret123!')
+  await first.getByLabel('Lösenord').fill(NEW_PASSWORD)
   await first.getByRole('button', { name: 'Skapa konto och gå med' }).click()
   await expect(first.getByRole('heading', { name: 'Hej Första!' })).toBeVisible()
 
@@ -77,7 +77,7 @@ test('a removed member loses access on their next click', async ({ page, browser
   const member = await otherBrowser(browser)
   await member.goto(link)
   await member.getByLabel('Namn').fill('Rolf Removed')
-  await member.getByLabel('Lösenord').fill('Secret123!')
+  await member.getByLabel('Lösenord').fill(NEW_PASSWORD)
   await member.getByRole('button', { name: 'Skapa konto och gå med' }).click()
   await expect(member.getByRole('heading', { name: 'Hej Rolf!' })).toBeVisible()
 

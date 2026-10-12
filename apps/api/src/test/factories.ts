@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Role } from '@crm/shared'
-import { db as defaultDb, type Db } from '../db/client.js'
+import { db as defaultDb, type Db, type Tx } from '../db/client.js'
 import { memberships, tenants, users } from '../db/schema.js'
 import { withTenant, type TenantContext } from '../db/tenant.js'
 
@@ -35,3 +35,8 @@ export async function pgErrorOf(promise: Promise<unknown>): Promise<string> {
   }
   throw new Error('Expected the query to fail, but it succeeded')
 }
+
+// Direct database access for test setup (e.g. backdating a record), with the 'system' role
+// so RLS role checks allow the writes. Tenant isolation still applies.
+export const asSystemIn = <T>(tenantId: string, fn: (tx: Tx) => Promise<T>) =>
+  withTenant({ tenantId, userId: randomUUID(), role: 'system' }, fn)

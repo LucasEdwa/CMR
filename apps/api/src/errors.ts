@@ -1,6 +1,7 @@
 import type { FastifyError, FastifyInstance } from 'fastify'
 import { ZodError } from 'zod'
 import type { ApiError } from '@crm/shared'
+import { isRlsViolation, scrubError } from './db/errors.js'
 
 export class HttpError extends Error {
   constructor(
@@ -26,6 +27,10 @@ export function registerErrorHandlers(app: FastifyInstance) {
     if (err instanceof HttpError) {
       return reply.status(err.statusCode).send(body(err.code, err.message, err.details))
     }
+    // RLS said no (role or "own records only"): the same answer as the API's own role checks.
+    if (isRlsViolation(err)) {
+      return reply.status(403).send(body('forbidden', 'You do not have access to this'))
+    }
     if (err instanceof ZodError) {
       return reply.status(400).send(body('validation_error', 'Invalid request', err.issues))
     }
@@ -33,7 +38,7 @@ export function registerErrorHandlers(app: FastifyInstance) {
     if (statusCode < 500) {
       return reply.status(statusCode).send(body('bad_request', err.message))
     }
-    request.log.error(err)
+    request.log.error({ err: scrubError(err) }, 'request failed')
     return reply.status(500).send(body('internal_error', 'Something went wrong'))
   })
 }

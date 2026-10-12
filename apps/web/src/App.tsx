@@ -4,6 +4,8 @@ import { RequireAuth } from '@/components/layout/RequireAuth'
 import { Home } from '@/pages/Home'
 import { TasksPage } from '@/pages/tasks/TasksPage'
 import { ImportPage } from '@/pages/import/ImportPage'
+import { TwoFactorChallenge } from '@/pages/auth/TwoFactorChallenge'
+import { SetupTwoFactor } from '@/pages/auth/SetupTwoFactor'
 import { DuplicatesPage } from '@/pages/contacts/DuplicatesPage'
 import { TrashPage } from '@/pages/TrashPage'
 import { ContactsPage } from '@/pages/contacts/ContactsPage'
@@ -25,6 +27,7 @@ import { SettingsLayout } from '@/pages/settings/SettingsLayout'
 import { WorkspaceSettings } from '@/pages/settings/WorkspaceSettings'
 import { PipelineSettings } from '@/pages/settings/PipelineSettings'
 import { PicklistSettings } from '@/pages/settings/PicklistSettings'
+import { AuditLog } from '@/pages/settings/AuditLog'
 import { DealsPage } from '@/pages/deals/DealsPage'
 import { DealDetail } from '@/pages/deals/DealDetail'
 
@@ -35,10 +38,14 @@ const router = createBrowserRouter([
   { path: '/verify-email', element: <VerifyEmail /> },
   { path: '/forgot-password', element: <ForgotPassword /> },
   { path: '/reset-password', element: <ResetPassword /> },
+  { path: '/login/2fa', element: <TwoFactorChallenge /> },
   { path: '/invite/:token', element: <Invite /> },
   {
     element: <RequireAuth needsWorkspace={false} />,
-    children: [{ path: '/onboarding', element: <Onboarding /> }],
+    children: [
+      { path: '/onboarding', element: <Onboarding /> },
+      { path: '/setup-2fa', element: <SetupTwoFactor /> },
+    ],
   },
   {
     element: <RequireAuth />,
@@ -66,6 +73,7 @@ const router = createBrowserRouter([
               { path: 'profile', element: <Profile /> },
               { path: 'pipelines', element: <PipelineSettings /> },
               { path: 'lists', element: <PicklistSettings /> },
+              { path: 'audit', element: <AuditLog /> },
             ],
           },
         ],

@@ -2,7 +2,6 @@ import type { FastifyInstance } from 'fastify'
 import { sql } from 'drizzle-orm'
 import type { Health } from '@crm/shared'
 import { db } from '../db/client.js'
-import { env } from '../env.js'
 
 export async function healthRoutes(app: FastifyInstance) {
   app.get('/health', async (): Promise<Health> => {
@@ -12,6 +11,8 @@ export async function healthRoutes(app: FastifyInstance) {
     } catch {
       dbStatus = 'down'
     }
-    return { status: 'ok', db: dbStatus, env: env.APP_ENV, version: env.RELEASE }
+    // Public: no environment or version, which would help an attacker pick known bugs.
+    // The release is in Sentry and the deploy logs.
+    return { status: 'ok', db: dbStatus }
   })
 }

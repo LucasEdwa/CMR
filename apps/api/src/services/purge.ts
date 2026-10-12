@@ -57,7 +57,7 @@ export async function purgeRecord(tx: Tx, job: PurgeJob) {
       .where(and(inArray(activities.id, linked), sql`not exists (select 1 from ${activityLinks} where ${activityLinks.activityId} = ${activities.id})`))
   }
   if (gone) {
-    await audit(tx, { tenantId: job.tenantId, userId: job.userId, role: 'member' }, {
+    await audit(tx, { tenantId: job.tenantId, userId: job.userId, role: 'system' }, {
       action: 'purge',
       entityType: job.type,
       entityId: job.id,

@@ -3,7 +3,8 @@ import type { FastifyInstance } from 'fastify'
 import { eq } from 'drizzle-orm'
 import { buildApp } from '../../app.js'
 import { auditLog, contacts } from '../../db/schema.js'
-import { withTenant, withTenantOnly } from '../../db/tenant.js'
+import { withTenant } from '../../db/tenant.js'
+import { asSystemIn } from '../../test/factories.js'
 import { purgeRecord } from '../../services/purge.js'
 import { TestClient, addMember, createWorkspace, signUpVerified } from '../../test/client.js'
 
@@ -142,13 +143,13 @@ describe('contacts and companies', () => {
     await owner.delete(`/api/contacts/${contact.id}`)
     const job = { tenantId: ws.id, userId: ownerId, type: 'contact' as const, id: contact.id }
 
-    expect(await withTenantOnly(ws.id, (tx) => purgeRecord(tx, job))).toBe(false)
-    await withTenantOnly(ws.id, (tx) =>
+    expect(await asSystemIn(ws.id, (tx) => purgeRecord(tx, job))).toBe(false)
+    await asSystemIn(ws.id, (tx) =>
       tx.update(contacts).set({ deletedAt: new Date(Date.now() - 31 * 86_400_000) }).where(eq(contacts.id, contact.id)),
     )
     const ctx = { tenantId: ws.id, userId: ownerId, role: 'owner' as const }
     expect(await withTenant(ctx, (tx) => purgeRecord(tx, job))).toBe(true)
-    const rows = await withTenantOnly(ws.id, (tx) => tx.select().from(contacts).where(eq(contacts.id, contact.id)))
+    const rows = await asSystemIn(ws.id, (tx) => tx.select().from(contacts).where(eq(contacts.id, contact.id)))
     expect(rows).toHaveLength(0)
   })
 
@@ -158,7 +159,7 @@ describe('contacts and companies', () => {
     await owner.patch(`/api/contacts/${contact.id}`, { title: 'Säljchef', tags: ['ny'] })
     await owner.delete(`/api/contacts/${contact.id}`)
 
-    const rows = await withTenantOnly(ws.id, (tx) => tx.select().from(auditLog).where(eq(auditLog.entityId, contact.id)))
+    const rows = await asSystemIn(ws.id, (tx) => tx.select().from(auditLog).where(eq(auditLog.entityId, contact.id)))
     expect(rows.map((r) => r.action).sort()).toEqual(['create', 'delete', 'update'])
     expect(rows.find((r) => r.action === 'update')!.diff).toMatchObject({ title: ['Säljare', 'Säljchef'], tags: [[], ['ny']] })
   })

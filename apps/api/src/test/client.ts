@@ -31,6 +31,8 @@ export class TestClient {
     return res
   }
 
+  cookieHeader = () => [...this.cookies].map(([k, v]) => `${k}=${v}`).join('; ')
+
   get = (url: string) => this.request('GET', url)
   post = (url: string, body: unknown = {}) => this.request('POST', url, body)
   patch = (url: string, body: unknown) => this.request('PATCH', url, body)

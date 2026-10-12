@@ -9,7 +9,9 @@ export type Locale = z.infer<typeof localeSchema>
 export const isTimezone = (tz: string) => tz === 'UTC' || Intl.supportedValuesOf('timeZone').includes(tz)
 
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email())
-export const passwordSchema = z.string().min(8).max(128)
+// Length over rules (NIST 800-63B); known-breached passwords are rejected by the API.
+export const MIN_PASSWORD_LENGTH = 10
+export const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(128)
 
 export const signupSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -52,6 +54,8 @@ export const updateWorkspaceSchema = z.object({
   currency: z.enum(CURRENCIES).optional(),
   timezone: z.string().refine(isTimezone, 'invalid_timezone').optional(),
   dateFormat: z.enum(DATE_FORMATS).optional(),
+  ownRecordsOnly: z.boolean().optional(),
+  requireTwoFactor: z.boolean().optional(),
 })
 export type UpdateWorkspaceInput = z.input<typeof updateWorkspaceSchema>
 
@@ -63,6 +67,8 @@ export const workspaceSchema = z.object({
   currency: z.enum(CURRENCIES),
   timezone: z.string(),
   dateFormat: z.enum(DATE_FORMATS),
+  ownRecordsOnly: z.boolean(),
+  requireTwoFactor: z.boolean(),
 })
 export type Workspace = z.infer<typeof workspaceSchema>
 
@@ -74,9 +80,12 @@ export const meSchema = z.object({
     locale: localeSchema,
     // Null means "use the workspace timezone".
     timezone: z.string().nullable(),
+    twoFactorEnabled: z.boolean(),
   }),
   workspaces: z.array(z.object({ id: z.uuid(), name: z.string(), slug: z.string(), role: roleSchema })),
   activeWorkspaceId: z.uuid().nullable(),
+  // The active workspace requires two-factor login and this user has not set it up yet.
+  twoFactorSetupRequired: z.boolean(),
 })
 export type Me = z.infer<typeof meSchema>
 
@@ -127,3 +136,40 @@ export const acceptInvitationSchema = z.object({
 })
 
 export const updateMemberSchema = z.object({ role: roleSchema })
+
+export const deleteWorkspaceSchema = z.object({
+  // The workspace name, typed again to confirm.
+  confirm: z.string().trim().min(1),
+})
+
+// ---- account security -----------------------------------------------------------
+
+export const SECURITY_EVENT_TYPES = [
+  'login',
+  'login_failed',
+  'logout',
+  'password_changed',
+  'two_factor_enabled',
+  'two_factor_disabled',
+  'sessions_revoked',
+] as const
+export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number]
+
+export const securityEventSchema = z.object({
+  id: z.uuid(),
+  type: z.enum(SECURITY_EVENT_TYPES),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  createdAt: z.string(),
+})
+export type SecurityEvent = z.infer<typeof securityEventSchema>
+
+export const sessionInfoSchema = z.object({
+  id: z.string(),
+  current: z.boolean(),
+  ipAddress: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+export type SessionInfo = z.infer<typeof sessionInfoSchema>
