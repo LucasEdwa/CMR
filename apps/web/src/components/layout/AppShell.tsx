@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Check, ChevronsUpDown, Home, LogOut, Menu, Plus, Settings } from 'lucide-react'
+import { Building2, Check, ChevronsUpDown, Home, LogOut, Menu, Plus, Settings, Trash2, Users } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -22,15 +22,19 @@ import { errorMessage } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { to: '/', key: 'nav.home', icon: Home, end: true },
-  { to: '/settings', key: 'nav.settings', icon: Settings, end: false },
+  { to: '/', key: 'nav.home', icon: Home, end: true, writersOnly: false },
+  { to: '/contacts', key: 'nav.contacts', icon: Users, end: false, writersOnly: false },
+  { to: '/companies', key: 'nav.companies', icon: Building2, end: false, writersOnly: false },
+  { to: '/trash', key: 'nav.trash', icon: Trash2, end: false, writersOnly: true },
+  { to: '/settings', key: 'nav.settings', icon: Settings, end: false, writersOnly: false },
 ] as const
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
+  const { role } = useActiveWorkspace()
   return (
     <nav className="grid gap-1" aria-label={t('nav.menu')}>
-      {NAV.map(({ to, key, icon: Icon, end }) => (
+      {NAV.filter((item) => !item.writersOnly || role !== 'viewer').map(({ to, key, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
