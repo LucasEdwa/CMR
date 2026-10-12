@@ -28,3 +28,13 @@ export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>, db
     return fn(tx)
   })
 }
+
+// Tenant-only context for flows without a member yet, e.g. looking up an invitation link
+// whose token names the tenant. Never use it with a tenant id the caller merely claims
+// unless the following query also checks a secret (like the invitation token hash).
+export async function withTenantOnly<T>(tenantId: string, fn: (tx: Tx) => Promise<T>, db: Db = defaultDb): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.tenant_id', ${tenantId}, true)`)
+    return fn(tx)
+  })
+}
