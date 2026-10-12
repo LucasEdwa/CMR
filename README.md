@@ -60,6 +60,16 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 - Export builds the CSV in the browser from `/<object>/export` (the list's filters, up to 50 000 rows): UTF-8 with BOM, semicolons, formula-looking cells prefixed with `'`.
 - Sample file with deliberate errors: `apps/web/public/samples/kontakter-500.csv` (491 good rows, 7 bad, 2 repeated).
 
+## Keeping workspaces apart
+
+- Every customer table has `tenant_id` with forced RLS; the API's database role cannot bypass it; the workspace comes from the session and a membership check, never from the request.
+- Inside a workspace only that workspace is visible, also in `tenants` and `memberships` (migration 0018). The cross-workspace view of one's own memberships exists only without a workspace (`withUser`).
+- `src/routes/__tests__/cross-tenant.test.ts` fills one workspace with a marker word and calls every route from another workspace with those ids: the marker must never come back and nothing may change. New routes are covered automatically.
+- API responses are `Cache-Control: no-store`; request logs keep the path only (query strings carry names and emails).
+- Email jobs (which contain login and invitation links) are deleted a minute after sending.
+- The web app sends a strict Content-Security-Policy and other security headers (`apps/web/vercel.json`); notes are never rendered as HTML.
+- Still to do before go-live (Sprint 9): retention for audit diffs and import error rows, signup email enumeration, two-factor login, and an outside security review.
+
 ## Auth
 
 - Better Auth handles signup, verification, login, sessions and password reset (`apps/api/src/auth/auth.ts`, mounted at `/api/auth/*`). Auth tables (`users`, `sessions`, `accounts`, `verifications`) are global; workspaces, memberships and invitations are tenant tables with RLS.
@@ -72,6 +82,6 @@ Seed users (password `Password123!`): anna@acme.test (Owner), adam@acme.test (Ad
 Needs the client's accounts (see "Before Sprint 0" in the plan). Then:
 
 1. **Neon** (EU region): create the database. As the owner role, run `create role app_user login password '<strong>' nobypassrls;` and `grant connect on database <db> to app_user;`.
-2. **Railway** (EU region): new service from this repo, root `/`, config `apps/api/railway.json`. Env: `APP_ENV=staging`, `DATABASE_URL` (app_user), `DATABASE_OWNER_URL` (owner; migrations run before each deploy), `WEB_ORIGIN`, `BETTER_AUTH_SECRET` (`openssl rand -base64 48`), `SMTP_URL` and `EMAIL_FROM` from the email provider (Resend or Postmark, EU), `SENTRY_DSN`, `RELEASE`.
+2. **Railway** (EU region): new service from this repo, root `/`, config `apps/api/railway.json`. Env: `APP_ENV=staging`, `TRUST_PROXY` (number of proxies in front of the API, normally `2`: Vercel and Railway's edge; check that `request.ip` in the logs is the real client IP), `DATABASE_URL` (app_user), `DATABASE_OWNER_URL` (owner; migrations run before each deploy), `WEB_ORIGIN`, `BETTER_AUTH_SECRET` (`openssl rand -base64 48`), `SMTP_URL` and `EMAIL_FROM` from the email provider (Resend or Postmark, EU), `SENTRY_DSN`, `RELEASE`.
 3. **Vercel**: new project with root directory `apps/web`. Put the Railway URL into `apps/web/vercel.json`. Env: `VITE_APP_ENV=staging`, `VITE_SENTRY_DSN`.
 4. Both platforms deploy on push to `main`.
