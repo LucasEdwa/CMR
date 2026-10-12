@@ -17,11 +17,16 @@ export function Home() {
         <Users className="text-muted-foreground size-10" aria-hidden />
         <h2 className="text-lg font-medium">{t('home.emptyTitle')}</h2>
         <p className="text-muted-foreground max-w-md">{t('home.emptyBody')}</p>
-        {canManage && (
+        <div className="flex flex-wrap justify-center gap-2">
           <Button asChild>
-            <Link to="/settings/members">{t('home.inviteTeam')}</Link>
+            <Link to="/contacts">{t('nav.contacts')}</Link>
           </Button>
-        )}
+          {canManage && (
+            <Button asChild variant="outline">
+              <Link to="/settings/members">{t('home.inviteTeam')}</Link>
+            </Button>
+          )}
+        </div>
       </section>
     </div>
   )

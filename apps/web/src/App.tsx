@@ -2,6 +2,11 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { Home } from '@/pages/Home'
+import { TrashPage } from '@/pages/TrashPage'
+import { ContactsPage } from '@/pages/contacts/ContactsPage'
+import { ContactDetail } from '@/pages/contacts/ContactDetail'
+import { CompaniesPage } from '@/pages/companies/CompaniesPage'
+import { CompanyDetail } from '@/pages/companies/CompanyDetail'
 import { Invite } from '@/pages/Invite'
 import { NotFound } from '@/pages/NotFound'
 import { Onboarding } from '@/pages/Onboarding'
@@ -35,6 +40,11 @@ const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { path: '/', element: <Home /> },
+          { path: '/contacts', element: <ContactsPage /> },
+          { path: '/contacts/:id', element: <ContactDetail /> },
+          { path: '/companies', element: <CompaniesPage /> },
+          { path: '/companies/:id', element: <CompanyDetail /> },
+          { path: '/trash', element: <TrashPage /> },
           {
             path: '/settings',
             element: <SettingsLayout />,
