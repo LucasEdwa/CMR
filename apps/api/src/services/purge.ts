@@ -1,9 +1,9 @@
-import { and, eq, lt } from 'drizzle-orm'
+import { and, eq, inArray, lt, sql } from 'drizzle-orm'
 import type { PgBoss } from 'pg-boss'
 import { TRASH_RETENTION_DAYS } from '@crm/shared'
 import { audit } from '../db/audit.js'
 import type { Tx } from '../db/client.js'
-import { companies, contacts, deals } from '../db/schema.js'
+import { activities, activityLinks, companies, contacts, deals } from '../db/schema.js'
 import type { TenantContext } from '../db/tenant.js'
 import { QUEUES, type TenantJob } from '../jobs/queues.js'
 
@@ -43,10 +43,19 @@ export async function purgeRecord(tx: Tx, job: PurgeJob) {
     await tx.update(contacts).set({ companyId: null }).where(eq(contacts.companyId, job.id))
     await tx.update(deals).set({ companyId: null }).where(eq(deals.companyId, job.id))
   }
+  const linkColumn = { contact: activityLinks.contactId, company: activityLinks.companyId, deal: activityLinks.dealId }[job.type]
+  const linked = (await tx.select({ id: activityLinks.activityId }).from(activityLinks).where(eq(linkColumn, job.id))).map((l) => l.id)
+  // Tasks and activity links go with the record (ON DELETE CASCADE).
   const [gone] = await tx
     .delete(table)
     .where(and(eq(table.id, job.id), lt(table.deletedAt, cutoff)))
     .returning({ id: table.id })
+  if (gone && linked.length) {
+    // Activities that were only on this record have nowhere left to show: erase them too.
+    await tx
+      .delete(activities)
+      .where(and(inArray(activities.id, linked), sql`not exists (select 1 from ${activityLinks} where ${activityLinks.activityId} = ${activities.id})`))
+  }
   if (gone) {
     await audit(tx, { tenantId: job.tenantId, userId: job.userId, role: 'member' }, {
       action: 'purge',

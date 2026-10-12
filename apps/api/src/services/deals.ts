@@ -18,6 +18,7 @@ import { assertMember, buildSearchText, likePattern, ownerFilter, ownerRef, sv }
 import { ensureDefaultPipeline } from './pipelines.js'
 import { picklistHas } from './picklists.js'
 import { schedulePurge } from './purge.js'
+import { nextTasksForDeals } from './tasks.js'
 
 type DealRow = typeof deals.$inferSelect
 type Currency = Deal['currency']
@@ -69,7 +70,8 @@ async function contactsFor(tx: Tx, ids: string[]) {
 }
 
 async function toDeals(tx: Tx, ctx: TenantContext, rows: Row[]): Promise<Deal[]> {
-  const [linked, staleDays] = await Promise.all([contactsFor(tx, rows.map((r) => r.deal.id)), staleDaysOf(tx, ctx)])
+  const ids = rows.map((r) => r.deal.id)
+  const [linked, staleDays, nextTasks] = await Promise.all([contactsFor(tx, ids), staleDaysOf(tx, ctx), nextTasksForDeals(tx, ids)])
   const staleBefore = Date.now() - staleDays * DAY_MS
   return rows.map(({ deal: d, ...r }) => ({
     id: d.id,
@@ -87,6 +89,7 @@ async function toDeals(tx: Tx, ctx: TenantContext, rows: Row[]): Promise<Deal[]>
     company: d.companyId && r.companyName ? { id: d.companyId, name: r.companyName } : null,
     contacts: linked.get(d.id) ?? [],
     stale: d.status === 'open' && d.lastActivityAt.getTime() < staleBefore,
+    nextTask: d.status === 'open' ? (nextTasks.get(d.id) ?? null) : null,
     lastActivityAt: d.lastActivityAt.toISOString(),
     stageEnteredAt: d.stageEnteredAt.toISOString(),
     createdAt: d.createdAt.toISOString(),
