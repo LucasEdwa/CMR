@@ -39,14 +39,15 @@ export function SearchPalette() {
     <>
       <Button
         variant="outline"
-        className="text-muted-foreground h-9 w-9 justify-start gap-2 px-2 sm:w-56 sm:px-3"
+        className="text-muted-foreground h-9 w-9 justify-center gap-2 overflow-hidden px-0 has-[>svg]:px-0 sm:w-56 sm:justify-start sm:px-3 sm:has-[>svg]:px-3"
         onClick={() => setOpen(true)}
         aria-label={t('search.open')}
         aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
       >
         <Search className="size-4 shrink-0" aria-hidden />
-        <span className="hidden flex-1 text-left sm:inline">{t('search.placeholder')}</span>
-        <kbd className="bg-muted hidden rounded px-1.5 text-[10px] font-medium sm:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+        {/* Short label here; the dialog has the full placeholder. Truncates rather than spilling over the bell. */}
+        <span className="hidden min-w-0 flex-1 truncate text-left sm:inline">{t('search.button')}</span>
+        <kbd className="bg-muted hidden shrink-0 rounded px-1.5 text-[10px] font-medium sm:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="top-[15%] translate-y-0 overflow-hidden p-0 sm:max-w-lg" showCloseButton={false}>
