@@ -51,7 +51,32 @@ describe('mapRow', () => {
       { field: 'firstName', code: 'required' },
       { field: 'email', code: 'invalid' },
     ])
-    expect(mapRow('companies', ['name', 'orgNumber'], ['Bygg AB', '556677-8890']).issues).toEqual([{ field: 'orgNumber', code: 'invalid' }])
+    expect(mapRow('companies', ['name', 'size'], ['Bygg AB', 'många']).issues).toEqual([{ field: 'size', code: 'invalid' }])
+  })
+
+  it('imports a company with an invalid org number as a private customer, with a notice', () => {
+    const row = mapRow('companies', ['name', 'orgNumber', 'fortnoxCustomerNumber'], ['Anna Andersson', '1000000334', '1000000334'])
+    expect(row.issues).toEqual([])
+    expect(row.notices).toEqual([{ field: 'orgNumber', code: 'imported_as_private' }])
+    expect(row.input).toEqual({ name: 'Anna Andersson', customerType: 'private', fortnoxCustomerNumber: '1000000334' })
+  })
+
+  it('reads billing, terms and discounts the way ERP exports write them', () => {
+    const fields = [
+      'name', 'orgNumber', 'email', 'phone', 'street', 'city', 'invoiceEmail', 'paymentTermDays',
+      'creditApproved', 'creditLimit', 'discount', 'discountRental', 'contactName',
+    ] as const
+    const row = mapRow('companies', [...fields], [
+      'Bygg AB', '556036-0793', '\u200bInfo@Bygg.se', '\t+46 70 123', 'Box 77, -', '\t-', 'a@bygg.se | b@bygg.se', '30',
+      'true', '1 500,50', '0.00', '12,5', 'Anna Ek',
+    ])
+    expect(row.issues).toEqual([])
+    expect(row.notices).toEqual([])
+    expect(row.refs).toEqual({ contactName: 'Anna Ek' })
+    expect(row.input).toEqual({
+      name: 'Bygg AB', orgNumber: '556036-0793', email: 'info@bygg.se', phone: '+46 70 123', street: 'Box 77',
+      invoiceEmail: 'a@bygg.se', paymentTermDays: 30, creditApproved: true, creditLimit: 150050, discount: 0, discountRental: 12.5,
+    })
   })
 
   it('parses deal amounts, dates and statuses and keeps names to resolve', () => {
@@ -60,6 +85,7 @@ describe('mapRow', () => {
       input: { name: 'Licens', value: 199950, status: 'won', expectedCloseDate: '2026-12-31' },
       refs: { stage: 'Offert skickad', company: 'Kund AB' },
       issues: [],
+      notices: [],
     })
   })
 })

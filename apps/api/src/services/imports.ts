@@ -171,7 +171,7 @@ class RowError extends Error {
   }
 }
 
-type Outcome = { action: 'created' | 'updated' | 'skipped'; record?: { type: 'contact' | 'company' | 'deal'; id: string; before?: Record<string, unknown> }; extra?: Array<{ type: 'company'; id: string }> }
+type Outcome = { action: 'created' | 'updated' | 'skipped'; record?: { type: 'contact' | 'company' | 'deal'; id: string; before?: Record<string, unknown> }; extra?: Array<{ type: 'company' | 'contact'; id: string }> }
 
 // Workspace labels for picklists ("Mässa 2026") map to their key.
 function picklistKey(lists: Picklists, kind: 'lead_source' | 'industry', value: unknown) {
@@ -232,23 +232,73 @@ async function importContact(tx: Tx, ctx: TenantContext, mode: string, mapped: M
   return { action: 'created', record: { type: 'contact', id: contact.id }, extra }
 }
 
+// Shared mailboxes (info@, faktura@ …) belong to the company, not to its contact person.
+const ROLE_MAILBOX = /^(info|kontakt|contact|faktura|fakturor|invoice|invoices|ekonomi|order|admin|post|mail|office|kontoret|support|hej|hello|kundtjanst|kundservice)[.+@]/i
+
+// The company's contact person becomes a contact on it, with the row's email and phone, unless the "person"
+// is just the company's own name, the company already has a contact with that name, or the email is someone else's.
+async function contactPerson(
+  tx: Tx,
+  ctx: TenantContext,
+  company: { id: string; name: string },
+  person: { name?: string; email?: string | null; phone?: string | null },
+  created: NonNullable<Outcome['extra']>,
+) {
+  const { name } = person
+  const companyId = company.id
+  if (!name || normalizeLabel(name) === normalizeLabel(company.name)) return
+  const [first = name, ...rest] = name.split(/\s+/)
+  const [existing] = await tx
+    .select({ id: contacts.id })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.companyId, companyId),
+        sql`lower(${contacts.firstName} || ' ' || ${contacts.lastName}) = ${`${first} ${rest.join(' ')}`.toLowerCase()}`,
+        isNull(contacts.deletedAt),
+      ),
+    )
+    .limit(1)
+  if (existing) return
+  let email = person.email && !ROLE_MAILBOX.test(person.email) ? person.email : null
+  if (email) {
+    const [taken] = await tx.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.email, email), isNull(contacts.deletedAt))).limit(1)
+    if (taken) email = null
+  }
+  const contact = await createContact(tx, ctx, {
+    ...createContactSchema.parse({ firstName: first, lastName: rest.join(' '), email, phone: person.phone ?? null }),
+    companyId,
+  })
+  created.push({ type: 'contact', id: contact.id })
+}
+
 async function importCompany(tx: Tx, ctx: TenantContext, mode: string, mapped: MappedRow, lookups: Lookups): Promise<Outcome> {
-  const input = { ...mapped.input } as Record<string, unknown> & { orgNumber?: string | null; domain?: string | null }
+  const input = { ...mapped.input } as Record<string, unknown> & { orgNumber?: string | null; fortnoxCustomerNumber?: string | null; domain?: string | null }
   if ('industry' in input) input.industry = picklistKey(lookups.picklists, 'industry', input.industry)
   const ownerUserId = owner(lookups, mapped.refs.owner)
-  // Same company: same org number, else same domain.
-  const match = input.orgNumber ? eq(companies.orgNumber, input.orgNumber) : input.domain ? eq(companies.domain, input.domain) : null
+  const extra: NonNullable<Outcome['extra']> = []
+  const person = { name: mapped.refs.contactName, email: input.email as string | null | undefined, phone: input.phone as string | null | undefined }
+  // Same company: same org number, else same Fortnox customer number, else same domain.
+  const match = input.orgNumber
+    ? eq(companies.orgNumber, input.orgNumber)
+    : input.fortnoxCustomerNumber
+      ? eq(companies.fortnoxCustomerNumber, input.fortnoxCustomerNumber)
+      : input.domain
+        ? eq(companies.domain, input.domain)
+        : null
   if (match) {
     const [existing] = await tx.select().from(companies).where(and(match, isNull(companies.deletedAt))).limit(1)
     if (existing) {
       if (mode === 'skip') return { action: 'skipped' }
       const changes = { ...input, tags: undefined, ...(ownerUserId ? { ownerUserId } : {}) }
       await updateCompany(tx, ctx, existing.id, changes)
-      return { action: 'updated', record: { type: 'company', id: existing.id, before: changedFields(existing, changes) } }
+      await contactPerson(tx, ctx, { id: existing.id, name: (input.name as string | undefined) ?? existing.name }, person, extra)
+      return { action: 'updated', record: { type: 'company', id: existing.id, before: changedFields(existing, changes) }, extra }
     }
   }
   const company = await createCompany(tx, ctx, { ...createCompanySchema.parse(input), ...(ownerUserId ? { ownerUserId } : {}) })
-  return { action: 'created', record: { type: 'company', id: company.id } }
+  await contactPerson(tx, ctx, company, person, extra)
+  return { action: 'created', record: { type: 'company', id: company.id }, extra }
 }
 
 async function importDeal(tx: Tx, ctx: TenantContext, mode: string, mapped: MappedRow, lookups: Lookups): Promise<Outcome> {
@@ -315,7 +365,7 @@ const importers = { contacts: importContact, companies: importCompany, deals: im
 function fileKey(object: ImportObject, mapped: MappedRow): string | null {
   const i = mapped.input as Record<string, string | undefined>
   if (object === 'contacts') return i.email ? `e:${i.email}` : null
-  if (object === 'companies') return i.orgNumber ? `o:${i.orgNumber}` : i.domain ? `d:${i.domain}` : null
+  if (object === 'companies') return i.orgNumber ? `o:${i.orgNumber}` : i.fortnoxCustomerNumber ? `f:${i.fortnoxCustomerNumber}` : i.domain ? `d:${i.domain}` : null
   return i.name ? `n:${i.name.toLowerCase()}|${(mapped.refs.company ?? '').toLowerCase()}` : null
 }
 
@@ -383,6 +433,8 @@ export async function runImport(job: ImportJob) {
               ...(outcome.extra ?? []).map((e) => ({ recordType: e.type, recordId: e.id, action: 'created', before: null })),
             ]
             if (tracked.length) await tx.insert(importRecords).values(tracked.map((t) => ({ ...t, tenantId: ctx.tenantId, importId: row.id })))
+            // Imported, but changed on the way in: listed so someone can check them.
+            for (const n of mapped.notices) if (errors.length < MAX_IMPORT_ERRORS) errors.push({ row: i + 1, field: n.field ?? null, code: n.code, values })
           } catch (err) {
             const { field, code } = errorFromException(err)
             fail(i, values, field, code)

@@ -5,6 +5,9 @@ export const LIFECYCLE_STAGES = ['lead', 'mql', 'sql', 'opportunity', 'customer'
 export type LifecycleStage = (typeof LIFECYCLE_STAGES)[number]
 export const CONSENT_BASES = ['consent', 'legitimate_interest', 'contract'] as const
 export const COMPANY_SIZES = ['1-9', '10-49', '50-249', '250+'] as const
+// Private customers are people, not businesses: they have no org number.
+export const CUSTOMER_TYPES = ['company', 'private'] as const
+export type CustomerType = (typeof CUSTOMER_TYPES)[number]
 export const SAVED_VIEW_OBJECTS = ['contacts', 'companies', 'deals'] as const
 export type SavedViewObject = (typeof SAVED_VIEW_OBJECTS)[number]
 // Built-in lead sources (see DEFAULT_PICKLISTS); workspaces can edit the list in settings.
@@ -147,6 +150,14 @@ export type Contact = z.infer<typeof contactSchema>
 
 // ---- companies ---------------------------------------------------------------
 
+const percentField = z
+  .number()
+  .min(0)
+  .max(100)
+  .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, 'invalid_percent')
+  .nullable()
+  .optional()
+
 const companyFields = {
   name: z.string().trim().min(1).max(200),
   orgNumber: normalized(normalizeOrgNumber, 'invalid_org_number'),
@@ -157,10 +168,35 @@ const companyFields = {
   phone: optionalText(40),
   ownerUserId: z.uuid().nullable().optional(),
   ...addressFields,
+  customerType: z.enum(CUSTOMER_TYPES),
+  tradeName: optionalText(200),
+  email: optionalEmailSchema,
+  notes: optionalText(5000),
+  invoiceStreet: optionalText(200),
+  invoicePostalCode: optionalText(20),
+  invoiceCity: optionalText(100),
+  invoiceEmail: optionalEmailSchema,
+  deliveryStreet: optionalText(200),
+  deliveryPostalCode: optionalText(20),
+  deliveryCity: optionalText(100),
+  fortnoxCustomerNumber: optionalText(40),
+  paymentTermDays: z.number().int().min(0).max(365).nullable().optional(),
+  creditApproved: z.boolean(),
+  // Öre, like every amount.
+  creditLimit: z.number().int().min(0).nullable().optional(),
+  // Percent, 0-100 with at most two decimals.
+  discount: percentField,
+  discountSale: percentField,
+  discountRental: percentField,
   tags: tagsField,
 }
 
-export const createCompanySchema = z.object({ ...companyFields, tags: tagsField.default([]) })
+export const createCompanySchema = z.object({
+  ...companyFields,
+  customerType: companyFields.customerType.default('company'),
+  creditApproved: companyFields.creditApproved.default(false),
+  tags: tagsField.default([]),
+})
 export type CreateCompanyInput = z.input<typeof createCompanySchema>
 export const updateCompanySchema = z.object(companyFields).partial()
 export type UpdateCompanyInput = z.input<typeof updateCompanySchema>
@@ -178,6 +214,24 @@ export const companySchema = z.object({
   postalCode: z.string().nullable(),
   city: z.string().nullable(),
   country: z.string(),
+  customerType: z.enum(CUSTOMER_TYPES),
+  tradeName: z.string().nullable(),
+  email: z.string().nullable(),
+  notes: z.string().nullable(),
+  invoiceStreet: z.string().nullable(),
+  invoicePostalCode: z.string().nullable(),
+  invoiceCity: z.string().nullable(),
+  invoiceEmail: z.string().nullable(),
+  deliveryStreet: z.string().nullable(),
+  deliveryPostalCode: z.string().nullable(),
+  deliveryCity: z.string().nullable(),
+  fortnoxCustomerNumber: z.string().nullable(),
+  paymentTermDays: z.number().int().nullable(),
+  creditApproved: z.boolean(),
+  creditLimit: z.number().int().nullable(),
+  discount: z.number().nullable(),
+  discountSale: z.number().nullable(),
+  discountRental: z.number().nullable(),
   owner: ref.nullable(),
   tags: z.array(z.string()),
   contactCount: z.number().int(),

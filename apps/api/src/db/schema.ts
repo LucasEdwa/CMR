@@ -1,9 +1,10 @@
 import { sql } from 'drizzle-orm'
-import { bigint, boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, time, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { bigint, boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, time, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import {
   ACTIVITY_TYPES,
   CALL_OUTCOMES,
   COMPANY_SIZES,
+  CUSTOMER_TYPES,
   CONSENT_BASES,
   DEAL_STATUSES,
   DEFAULT_STALE_DAYS,
@@ -224,6 +225,7 @@ export const auditLog = pgTable(
 export const lifecycleStage = pgEnum('lifecycle_stage', LIFECYCLE_STAGES)
 export const consentBasis = pgEnum('consent_basis', CONSENT_BASES)
 export const companySize = pgEnum('company_size', COMPANY_SIZES)
+export const customerType = pgEnum('customer_type', CUSTOMER_TYPES)
 export const savedViewObject = pgEnum('saved_view_object', SAVED_VIEW_OBJECTS)
 
 const address = {
@@ -259,10 +261,31 @@ export const companies = pgTable(
     size: companySize('size'),
     phone: text('phone'),
     ...address,
+    customerType: customerType('customer_type').notNull().default('company'),
+    tradeName: text('trade_name'),
+    email: text('email'),
+    notes: text('notes'),
+    invoiceStreet: text('invoice_street'),
+    invoicePostalCode: text('invoice_postal_code'),
+    invoiceCity: text('invoice_city'),
+    invoiceEmail: text('invoice_email'),
+    deliveryStreet: text('delivery_street'),
+    deliveryPostalCode: text('delivery_postal_code'),
+    deliveryCity: text('delivery_city'),
+    fortnoxCustomerNumber: text('fortnox_customer_number'),
+    paymentTermDays: integer('payment_term_days'),
+    creditApproved: boolean('credit_approved').notNull().default(false),
+    // Öre.
+    creditLimit: bigint('credit_limit', { mode: 'number' }),
+    // Percent with two decimals.
+    discount: numeric('discount', { precision: 5, scale: 2, mode: 'number' }),
+    discountSale: numeric('discount_sale', { precision: 5, scale: 2, mode: 'number' }),
+    discountRental: numeric('discount_rental', { precision: 5, scale: 2, mode: 'number' }),
     ...recordMeta,
   },
   (t) => [
     unique().on(t.tenantId, t.id),
+    index('companies_tenant_fortnox_idx').on(t.tenantId, t.fortnoxCustomerNumber),
     // One live company per org number in a workspace.
     uniqueIndex('companies_tenant_org_number_idx')
       .on(t.tenantId, t.orgNumber)

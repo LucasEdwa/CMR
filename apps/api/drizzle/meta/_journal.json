@@ -176,6 +176,13 @@
       "when": 1791838973806,
       "tag": "0024_redact_erased_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791913794166,
+      "tag": "0025_company_customer_fields",
+      "breakpoints": true
     }
   ]
 }

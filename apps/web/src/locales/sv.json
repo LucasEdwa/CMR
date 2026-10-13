@@ -207,7 +207,9 @@
     "INVALID_BACKUP_CODE": "Reservkoden stämmer inte eller har redan använts.",
     "INVALID_PASSWORD": "Fel lösenord.",
     "ACCOUNT_TEMPORARILY_LOCKED": "För många felaktiga koder. Vänta en stund och försök igen.",
-    "INVALID_TWO_FACTOR_COOKIE": "Inloggningen har gått ut. Logga in igen."
+    "INVALID_TWO_FACTOR_COOKIE": "Inloggningen har gått ut. Logga in igen.",
+    "invalid_number": "Ange ett giltigt tal.",
+    "invalid_percent": "Ange en procentsats mellan 0 och 100."
   },
   "notFound": {
     "title": "Sidan finns inte",
@@ -305,7 +307,27 @@
     "duplicate": "Det finns redan ett företag med det organisationsnumret: {{name}}.",
     "emptyBody": "Lägg till ditt första företag.",
     "saved": "Företaget är sparat",
-    "created_toast": "Företaget är skapat"
+    "created_toast": "Företaget är skapat",
+    "customerType": "Kundtyp",
+    "customerTypes": {
+      "company": "Företag",
+      "private": "Privatkund"
+    },
+    "tradeName": "Handelsnamn",
+    "email": "E-post",
+    "notes": "Anteckningar",
+    "billing": "Fakturering och villkor",
+    "invoiceAddress": "Fakturaadress",
+    "invoiceEmail": "Faktura-e-post",
+    "deliveryAddress": "Leveransadress",
+    "fortnoxCustomerNumber": "Fortnox kundnummer",
+    "paymentTermDays": "Betalningsvillkor (dagar)",
+    "paymentTerm": "{{count}} dagar",
+    "creditApproved": "Kreditgodkänd",
+    "creditLimit": "Kreditgräns (kr)",
+    "discount": "Rabatt (%)",
+    "discountSale": "Rabatt försäljning (%)",
+    "discountRental": "Rabatt uthyrning (%)"
   },
   "stages": {
     "lead": "Lead",
@@ -678,7 +700,25 @@
       "stage": "Steg",
       "status": "Status",
       "expectedCloseDate": "Förväntat avslut",
-      "contactEmail": "Kontaktens e-post"
+      "contactEmail": "Kontaktens e-post",
+      "customerType": "Kundtyp",
+      "tradeName": "Handelsnamn",
+      "notes": "Anteckningar",
+      "invoiceStreet": "Fakturaadress",
+      "invoicePostalCode": "Fakturapostnummer",
+      "invoiceCity": "Fakturaort",
+      "invoiceEmail": "Faktura-e-post",
+      "deliveryStreet": "Leveransadress",
+      "deliveryPostalCode": "Leveranspostnummer",
+      "deliveryCity": "Leveransort",
+      "fortnoxCustomerNumber": "Fortnox kundnummer",
+      "paymentTermDays": "Betalningsvillkor (dagar)",
+      "creditApproved": "Kreditgodkänd",
+      "creditLimit": "Kreditgräns",
+      "discount": "Rabatt (%)",
+      "discountSale": "Rabatt försäljning (%)",
+      "discountRental": "Rabatt uthyrning (%)",
+      "contactName": "Kontaktperson (skapas som kontakt)"
     },
     "previewLabel": "Förhandsgranskning av de första raderna",
     "check": "Kontroll",
@@ -694,7 +734,7 @@
         "update": "Tomma celler ändrar ingenting. Taggar läggs till."
       },
       "companies": {
-        "skip": "Samma organisationsnummer (annars webbplats) räknas som samma företag.",
+        "skip": "Samma organisationsnummer (annars Fortnox kundnummer, annars webbplats) räknas som samma företag.",
         "update": "Tomma celler ändrar ingenting."
       },
       "deals": {
@@ -732,7 +772,8 @@
       "not_found": "Hittades inte: {{field}}",
       "exists": "Finns redan: {{field}}",
       "duplicate_in_file": "Samma post finns tidigare i filen (hoppades över)",
-      "invalid_owner": "Ägaren är inte användare i företaget"
+      "invalid_owner": "Ägaren är inte användare i företaget",
+      "imported_as_private": "Ogiltigt organisationsnummer – importerad som privatkund utan organisationsnummer"
     },
     "open": {
       "contacts": "Visa kontakter",
@@ -960,7 +1001,24 @@
       "assigneeUserId": "Ansvarig",
       "completedAt": "Klar",
       "pinned": "Fäst",
-      "subject": "Ämne"
+      "subject": "Ämne",
+      "customerType": "Kundtyp",
+      "tradeName": "Handelsnamn",
+      "notes": "Anteckningar",
+      "invoiceStreet": "Fakturaadress",
+      "invoicePostalCode": "Fakturapostnummer",
+      "invoiceCity": "Fakturaort",
+      "invoiceEmail": "Faktura-e-post",
+      "deliveryStreet": "Leveransadress",
+      "deliveryPostalCode": "Leveranspostnummer",
+      "deliveryCity": "Leveransort",
+      "fortnoxCustomerNumber": "Fortnox kundnummer",
+      "paymentTermDays": "Betalningsvillkor (dagar)",
+      "creditApproved": "Kreditgodkänd",
+      "creditLimit": "Kreditgräns",
+      "discount": "Rabatt (%)",
+      "discountSale": "Rabatt försäljning (%)",
+      "discountRental": "Rabatt uthyrning (%)"
     }
   },
   "security": {

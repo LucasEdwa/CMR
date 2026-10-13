@@ -56,6 +56,24 @@ function toCompany(row: Row, tags: string[]): Company {
     postalCode: c.postalCode,
     city: c.city,
     country: c.country,
+    customerType: c.customerType,
+    tradeName: c.tradeName,
+    email: c.email,
+    notes: c.notes,
+    invoiceStreet: c.invoiceStreet,
+    invoicePostalCode: c.invoicePostalCode,
+    invoiceCity: c.invoiceCity,
+    invoiceEmail: c.invoiceEmail,
+    deliveryStreet: c.deliveryStreet,
+    deliveryPostalCode: c.deliveryPostalCode,
+    deliveryCity: c.deliveryCity,
+    fortnoxCustomerNumber: c.fortnoxCustomerNumber,
+    paymentTermDays: c.paymentTermDays,
+    creditApproved: c.creditApproved,
+    creditLimit: c.creditLimit,
+    discount: c.discount,
+    discountSale: c.discountSale,
+    discountRental: c.discountRental,
     owner: ownerRef(c.ownerUserId, row.ownerName),
     tags,
     contactCount: row.contactCount,
@@ -64,8 +82,8 @@ function toCompany(row: Row, tags: string[]): Company {
   }
 }
 
-const searchTextOf = (c: Pick<CompanyRow, 'name' | 'orgNumber' | 'domain' | 'city' | 'phone'>) =>
-  buildSearchText([c.name, c.orgNumber, c.orgNumber?.replace(/\D/g, ''), c.domain, c.city], [c.phone])
+const searchTextOf = (c: Pick<CompanyRow, 'name' | 'tradeName' | 'orgNumber' | 'domain' | 'city' | 'phone' | 'email' | 'fortnoxCustomerNumber'>) =>
+  buildSearchText([c.name, c.tradeName, c.orgNumber, c.orgNumber?.replace(/\D/g, ''), c.domain, c.city, c.email, c.fortnoxCustomerNumber], [c.phone])
 
 export async function listCompanies(tx: Tx, ctx: TenantContext, q: z.output<typeof companyListQuerySchema>) {
   const tz = await tenantTimezone(tx, ctx)

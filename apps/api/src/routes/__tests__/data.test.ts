@@ -104,6 +104,43 @@ describe('import', () => {
     expect((await owner.post(`/api/imports/${result.id}/undo`)).statusCode).toBe(409)
   })
 
+  it('imports a webshop customer export: billing, terms, private customers and contact persons', async () => {
+    const { owner } = await setup()
+    const header = 'name;org_number;fortnox_customer_number;contact_email;contact_phone;contact_person;company_street;company_postal_code;company_city;invoice_street;invoice_postal_code;invoice_city;invoice_email;payment_term;is_credit_approved;credit_limit;discount;discount_rental;notes;id;updated_by'
+    const csv = [
+      header,
+      'Bygg AB;556036-0793;20605;Info@bygg.se;\t+46 736566043;Anna Ek;Gatan 1;12458;Bandhagen;Box 44;12421;BANDHAGEN;faktura@bygg.se;30;true;0.00;0.00;20;"Rad ett\nRad två";a7ef5fed-799b-4191-ab6c-898f626199db;',
+      'Anders Högblom;1000000334;1000000334;anders@bank.se;;Anders Högblom;\t-;\t-;\t-;;;;;10;false;;0.00;;;df643a6d-5960-4e5f-80c5-fbae6326a5ab;',
+    ].join('\r\n')
+    const mapping = ['name', 'orgNumber', 'fortnoxCustomerNumber', 'email', 'phone', 'contactName', 'street', 'postalCode', 'city', 'invoiceStreet', 'invoicePostalCode', 'invoiceCity', 'invoiceEmail', 'paymentTermDays', 'creditApproved', 'creditLimit', 'discount', 'discountRental', 'notes', null, null]
+    const first = await runImport(owner, { object: 'companies', csv, mapping })
+    expect(first).toMatchObject({ created: 2, failed: 0 })
+    expect(first.errors.map((e) => [e.row, e.code])).toEqual([[2, 'imported_as_private']])
+
+    const { items } = await ok(owner.get('/api/companies?sort=name'))
+    const [privat, bygg] = items
+    expect(bygg).toMatchObject({
+      customerType: 'company', orgNumber: '556036-0793', fortnoxCustomerNumber: '20605', email: 'info@bygg.se', phone: '+46 736566043',
+      street: 'Gatan 1', invoiceStreet: 'Box 44', invoiceCity: 'BANDHAGEN', invoiceEmail: 'faktura@bygg.se',
+      paymentTermDays: 30, creditApproved: true, creditLimit: 0, discount: 0, discountRental: 20, notes: 'Rad ett\nRad två', contactCount: 1,
+    })
+    expect(privat).toMatchObject({ name: 'Anders Högblom', customerType: 'private', orgNumber: null, street: null, city: null, paymentTermDays: 10, contactCount: 0 })
+    // The contact person gets the row's phone, but not the company's shared info@ mailbox.
+    expect((await contactsNamed(owner, 'anna ek'))[0]).toMatchObject({ firstName: 'Anna', lastName: 'Ek', email: null, phone: '+46 736566043', company: { id: bygg.id } })
+    // Searchable by Fortnox customer number.
+    expect((await ok(owner.get('/api/companies?q=20605'))).items).toHaveLength(1)
+
+    // A private customer has no org number, so the Fortnox number recognises it the second time.
+    const again = await runImport(owner, { object: 'companies', csv: csv.replace(';10;false;', ';30;false;'), mapping, mode: 'update' })
+    expect(again).toMatchObject({ created: 0, updated: 2 })
+    expect((await ok(owner.get(`/api/companies/${privat.id}`))).paymentTermDays).toBe(30)
+    expect(await contactsNamed(owner, 'anna ek')).toHaveLength(1)
+
+    await ok(owner.post(`/api/imports/${first.id}/undo`, {}))
+    expect((await ok(owner.get('/api/companies'))).total).toBe(0)
+    expect(await contactsNamed(owner, 'anna ek')).toHaveLength(0)
+  })
+
   it('dedupes companies by org number and imports deals into named stages', async () => {
     const { owner } = await setup()
     const companies = await runImport(owner, {
@@ -111,9 +148,10 @@ describe('import', () => {
       csv: 'Namn,Organisationsnummer,Webbplats,Anställda\nByggbolaget AB,556036-0793,https://www.bygg.se/,120\nSamma AB,5560360793,,\nTrasigt AB,123,,',
       mapping: ['name', 'orgNumber', 'domain', 'size'],
     })
-    expect(companies).toMatchObject({ created: 1, skipped: 1, failed: 1 })
-    expect(companies.errors.map((e) => e.code)).toEqual(['duplicate_in_file', 'invalid'])
-    const [bygg] = (await ok(owner.get('/api/companies'))).items
+    // An org number that is not one makes the row a private customer instead of failing it.
+    expect(companies).toMatchObject({ created: 2, skipped: 1, failed: 0 })
+    expect(companies.errors.map((e) => e.code)).toEqual(['duplicate_in_file', 'imported_as_private'])
+    const [bygg] = (await ok(owner.get('/api/companies?q=byggbolaget'))).items
     expect(bygg).toMatchObject({ name: 'Byggbolaget AB', orgNumber: '556036-0793', domain: 'bygg.se', size: '50-249' })
 
     const deals = await runImport(owner, {

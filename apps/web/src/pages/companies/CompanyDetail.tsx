@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -15,7 +15,7 @@ import { ApiRequestError } from '@/lib/api'
 import { fullName, recordApi, useCompany, useContactList, useRecordMutation } from '@/lib/crm'
 import { dataApi } from '@/lib/data'
 import { errorMessage } from '@/lib/errors'
-import { formatDate } from '@/lib/format'
+import { formatAmount, formatDate } from '@/lib/format'
 import { ContactForm } from '../contacts/ContactForm'
 import { CompanyForm } from './CompanyForm'
 import { Timeline } from '@/components/activities/Timeline'
@@ -48,7 +48,26 @@ export function CompanyDetail() {
   if (company.isError) return <p className="text-destructive">{errorMessage(t, company.error)}</p>
 
   const c = company.data
-  const address = [c.street, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join(', ')
+  const joinAddress = (street: string | null, postalCode: string | null, city: string | null) =>
+    [street, [postalCode, city].filter(Boolean).join(' ')].filter(Boolean).join(', ')
+  const address = joinAddress(c.street, c.postalCode, c.city)
+  const invoiceAddress = joinAddress(c.invoiceStreet, c.invoicePostalCode, c.invoiceCity)
+  const deliveryAddress = joinAddress(c.deliveryStreet, c.deliveryPostalCode, c.deliveryCity)
+  // A discount of 0 is the same as none; showing it on every customer is noise.
+  const percent = (n: number | null) => (n ? `${n.toLocaleString(i18n.language)} %` : null)
+  const mail = (email: string | null) => email && <a className="underline" href={`mailto:${email}`}>{email}</a>
+  const billing: Array<[string, ReactNode]> = [
+    [t('companies.invoiceAddress'), invoiceAddress],
+    [t('companies.invoiceEmail'), mail(c.invoiceEmail)],
+    [t('companies.deliveryAddress'), deliveryAddress],
+    [t('companies.fortnoxCustomerNumber'), c.fortnoxCustomerNumber],
+    [t('companies.paymentTermDays'), c.paymentTermDays !== null && t('companies.paymentTerm', { count: c.paymentTermDays })],
+    [t('companies.creditApproved'), t(c.creditApproved ? 'common.yes' : 'common.no')],
+    [t('companies.creditLimit'), c.creditLimit !== null && formatAmount(c.creditLimit)],
+    [t('companies.discount'), percent(c.discount)],
+    [t('companies.discountSale'), percent(c.discountSale)],
+    [t('companies.discountRental'), percent(c.discountRental)],
+  ]
 
   return (
     <div className="mx-auto grid grid-cols-1 max-w-4xl gap-6">
@@ -59,8 +78,11 @@ export function CompanyDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold">{c.name}</h1>
-          <p className="text-muted-foreground">{[c.orgNumber, c.city].filter(Boolean).join(' · ')}</p>
+          <h1 className="flex items-center gap-2 text-lg font-semibold">
+            <span className="truncate">{c.name}</span>
+            {c.customerType === 'private' && <Badge variant="outline">{t('companies.customerTypes.private')}</Badge>}
+          </h1>
+          <p className="text-muted-foreground">{[c.tradeName, c.orgNumber, c.city].filter(Boolean).join(' · ')}</p>
           {c.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {c.tags.map((tag) => (
@@ -97,8 +119,11 @@ export function CompanyDetail() {
           <CardContent>
             <DetailList
               items={[
+                [t('companies.customerType'), t(`companies.customerTypes.${c.customerType}`)],
+                [t('companies.tradeName'), c.tradeName],
                 [t('companies.orgNumber'), c.orgNumber],
                 [t('companies.vatNumber'), c.vatNumber],
+                [t('companies.email'), mail(c.email)],
                 [t('companies.domain'), c.domain && <a className="underline" href={`https://${c.domain}`} target="_blank" rel="noreferrer">{c.domain}</a>],
                 [t('companies.phone'), c.phone && <a className="underline" href={`tel:${c.phone}`}>{c.phone}</a>],
                 [t('companies.industry'), picklistLabel(t, picklists.data, 'industry', c.industry)],
@@ -106,8 +131,19 @@ export function CompanyDetail() {
                 [t('list.owner'), c.owner?.name],
                 [t('contacts.address'), address],
                 [t('contacts.created'), formatDate(c.createdAt, i18n.language)],
+                [t('companies.notes'), c.notes && <span className="whitespace-pre-line">{c.notes}</span>],
               ]}
             />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>{t('companies.billing')}</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DetailList items={billing} />
           </CardContent>
         </Card>
         <Timeline record={{ type: 'company', id: c.id }} />

@@ -207,7 +207,9 @@
     "INVALID_BACKUP_CODE": "The backup code is wrong or has already been used.",
     "INVALID_PASSWORD": "Wrong password.",
     "ACCOUNT_TEMPORARILY_LOCKED": "Too many wrong codes. Wait a while and try again.",
-    "INVALID_TWO_FACTOR_COOKIE": "The login has expired. Log in again."
+    "INVALID_TWO_FACTOR_COOKIE": "The login has expired. Log in again.",
+    "invalid_number": "Enter a valid number.",
+    "invalid_percent": "Enter a percentage between 0 and 100."
   },
   "notFound": {
     "title": "Page not found",
@@ -305,7 +307,27 @@
     "duplicate": "There is already a company with that organisation number: {{name}}.",
     "emptyBody": "Add your first company.",
     "saved": "Company saved",
-    "created_toast": "Company created"
+    "created_toast": "Company created",
+    "customerType": "Customer type",
+    "customerTypes": {
+      "company": "Company",
+      "private": "Private customer"
+    },
+    "tradeName": "Trade name",
+    "email": "Email",
+    "notes": "Notes",
+    "billing": "Billing and terms",
+    "invoiceAddress": "Invoice address",
+    "invoiceEmail": "Invoice email",
+    "deliveryAddress": "Delivery address",
+    "fortnoxCustomerNumber": "Fortnox customer number",
+    "paymentTermDays": "Payment terms (days)",
+    "paymentTerm": "{{count}} days",
+    "creditApproved": "Credit approved",
+    "creditLimit": "Credit limit (SEK)",
+    "discount": "Discount (%)",
+    "discountSale": "Sales discount (%)",
+    "discountRental": "Rental discount (%)"
   },
   "stages": {
     "lead": "Lead",
@@ -678,7 +700,25 @@
       "stage": "Stage",
       "status": "Status",
       "expectedCloseDate": "Expected close",
-      "contactEmail": "Contact email"
+      "contactEmail": "Contact email",
+      "customerType": "Customer type",
+      "tradeName": "Trade name",
+      "notes": "Notes",
+      "invoiceStreet": "Invoice street",
+      "invoicePostalCode": "Invoice postal code",
+      "invoiceCity": "Invoice city",
+      "invoiceEmail": "Invoice email",
+      "deliveryStreet": "Delivery street",
+      "deliveryPostalCode": "Delivery postal code",
+      "deliveryCity": "Delivery city",
+      "fortnoxCustomerNumber": "Fortnox customer number",
+      "paymentTermDays": "Payment terms (days)",
+      "creditApproved": "Credit approved",
+      "creditLimit": "Credit limit",
+      "discount": "Discount (%)",
+      "discountSale": "Sales discount (%)",
+      "discountRental": "Rental discount (%)",
+      "contactName": "Contact person (created as a contact)"
     },
     "previewLabel": "Preview of the first rows",
     "check": "Check",
@@ -694,7 +734,7 @@
         "update": "Empty cells change nothing. Tags are added."
       },
       "companies": {
-        "skip": "The same org number (else website) counts as the same company.",
+        "skip": "The same org number (else Fortnox customer number, else website) counts as the same company.",
         "update": "Empty cells change nothing."
       },
       "deals": {
@@ -732,7 +772,8 @@
       "not_found": "Not found: {{field}}",
       "exists": "Already exists: {{field}}",
       "duplicate_in_file": "The same record appears earlier in the file (skipped)",
-      "invalid_owner": "The owner is not a user in the workspace"
+      "invalid_owner": "The owner is not a user in the workspace",
+      "imported_as_private": "Not a valid org number – imported as a private customer without one"
     },
     "open": {
       "contacts": "View contacts",
@@ -960,7 +1001,24 @@
       "assigneeUserId": "Assignee",
       "completedAt": "Done",
       "pinned": "Pinned",
-      "subject": "Subject"
+      "subject": "Subject",
+      "customerType": "Customer type",
+      "tradeName": "Trade name",
+      "notes": "Notes",
+      "invoiceStreet": "Invoice street",
+      "invoicePostalCode": "Invoice postal code",
+      "invoiceCity": "Invoice city",
+      "invoiceEmail": "Invoice email",
+      "deliveryStreet": "Delivery street",
+      "deliveryPostalCode": "Delivery postal code",
+      "deliveryCity": "Delivery city",
+      "fortnoxCustomerNumber": "Fortnox customer number",
+      "paymentTermDays": "Payment terms (days)",
+      "creditApproved": "Credit approved",
+      "creditLimit": "Credit limit",
+      "discount": "Discount (%)",
+      "discountSale": "Sales discount (%)",
+      "discountRental": "Rental discount (%)"
     }
   },
   "security": {

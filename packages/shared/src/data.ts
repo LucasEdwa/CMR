@@ -2,6 +2,7 @@ import Papa from 'papaparse'
 import { z } from 'zod'
 import { CURRENCIES } from './auth.js'
 import { COMPANY_SIZES, LIFECYCLE_STAGES, createCompanySchema, createContactSchema } from './crm.js'
+import { normalizeOrgNumber } from './validation.js'
 import { parseMoney } from './money.js'
 
 // ---- CSV ---------------------------------------------------------------------------
@@ -45,7 +46,13 @@ export type ImportObject = (typeof IMPORT_OBJECTS)[number]
 
 export const IMPORT_FIELDS = {
   contacts: ['firstName', 'lastName', 'fullName', 'email', 'phone', 'mobilePhone', 'title', 'company', 'lifecycleStage', 'leadSource', 'street', 'postalCode', 'city', 'country', 'tags', 'owner'],
-  companies: ['name', 'orgNumber', 'vatNumber', 'domain', 'industry', 'size', 'phone', 'street', 'postalCode', 'city', 'country', 'tags', 'owner'],
+  companies: [
+    'name', 'orgNumber', 'vatNumber', 'customerType', 'tradeName', 'domain', 'industry', 'size', 'phone', 'email',
+    'street', 'postalCode', 'city', 'country',
+    'invoiceStreet', 'invoicePostalCode', 'invoiceCity', 'invoiceEmail', 'deliveryStreet', 'deliveryPostalCode', 'deliveryCity',
+    'fortnoxCustomerNumber', 'paymentTermDays', 'creditApproved', 'creditLimit', 'discount', 'discountSale', 'discountRental',
+    'contactName', 'notes', 'tags', 'owner',
+  ],
   deals: ['name', 'value', 'currency', 'pipeline', 'stage', 'status', 'expectedCloseDate', 'company', 'contactEmail', 'owner'],
 } as const satisfies Record<ImportObject, readonly string[]>
 export type ImportField = (typeof IMPORT_FIELDS)[ImportObject][number]
@@ -91,14 +98,37 @@ const ALIASES: Record<ImportObject, Partial<Record<ImportField, string[]>>> = {
   companies: {
     name: ['namn', 'företag', 'företagsnamn', 'bolag', 'name', 'company', 'companyname', 'organisation', 'organization'],
     orgNumber: ['organisationsnummer', 'orgnr', 'orgnummer', 'orgno', 'organisationsnr', 'orgnumber', 'registrationnumber'],
-    vatNumber: ['momsnummer', 'momsregistreringsnummer', 'vatnummer', 'vat', 'vatnumber', 'vatno'],
     domain: ['domän', 'webbplats', 'hemsida', 'webb', 'domain', 'website', 'web', 'url'],
     industry: ['bransch', 'industry', 'sector', 'sektor'],
     size: ['storlek', 'antalanställda', 'anställda', 'size', 'employees', 'companysize'],
-    phone: ['telefon', 'tel', 'växel', 'phone', 'phonenumber'],
+    phone: ['telefon', 'tel', 'växel', 'phone', 'phonenumber', 'contactphone'],
+    email: ['epost', 'epostadress', 'email', 'mail', 'mejl', 'contactemail'],
+    customerType: ['kundtyp', 'customertype'],
+    tradeName: ['handelsnamn', 'särskiltföretagsnamn', 'tradename'],
+    invoiceStreet: ['fakturaadress', 'fakturagatuadress', 'invoicestreet', 'billingstreet'],
+    invoicePostalCode: ['fakturapostnummer', 'invoicepostalcode', 'billingpostalcode'],
+    invoiceCity: ['fakturaort', 'invoicecity', 'billingcity'],
+    invoiceEmail: ['fakturaepost', 'fakturamejl', 'invoiceemail', 'billingemail'],
+    deliveryStreet: ['leveransadress', 'deliverystreet', 'shippingstreet'],
+    deliveryPostalCode: ['leveranspostnummer', 'deliverypostalcode', 'shippingpostalcode'],
+    deliveryCity: ['leveransort', 'deliverycity', 'shippingcity'],
+    fortnoxCustomerNumber: ['fortnoxkundnummer', 'kundnummer', 'kundnr', 'fortnoxcustomernumber', 'customernumber'],
+    paymentTermDays: ['betalningsvillkor', 'betalningsvillkordagar', 'betalningsdagar', 'paymentterm', 'paymentterms', 'paymenttermsdays'],
+    creditApproved: ['kreditgodkänd', 'creditapproved', 'iscreditapproved'],
+    creditLimit: ['kreditgräns', 'kreditgränskr', 'creditlimit', 'creditlimitsek'],
+    discount: ['rabatt', 'discount'],
+    discountSale: ['försäljningsrabatt', 'rabattförsäljning', 'discountsale', 'salesdiscount'],
+    discountRental: ['hyresrabatt', 'rabatthyra', 'rabattuthyrning', 'discountrental', 'rentaldiscount'],
+    contactName: ['kontaktperson', 'kontakt', 'contactperson', 'contactname', 'contact'],
+    notes: ['anteckningar', 'anteckning', 'noteringar', 'kommentar', 'notes', 'note'],
+    vatNumber: ['momsnummer', 'momsregistreringsnummer', 'vatnummer', 'vat', 'vatnumber', 'vatno', 'taxnumber'],
     tags: ['taggar', 'tagg', 'etiketter', 'tags', 'tag'],
     owner: ['ägare', 'ansvarig', 'owner', 'assignedto'],
     ...ADDRESS_ALIASES,
+    // Exports from webshops and ERPs often prefix the visiting address.
+    street: [...ADDRESS_ALIASES.street, 'besöksadress', 'companystreet', 'visitingstreet'],
+    postalCode: [...ADDRESS_ALIASES.postalCode, 'companypostalcode'],
+    city: [...ADDRESS_ALIASES.city, 'companycity'],
   },
   deals: {
     name: ['namn', 'affär', 'affärsnamn', 'name', 'deal', 'dealname', 'opportunity', 'titel', 'title'],
@@ -159,6 +189,10 @@ const VALUE_ALIASES = {
     partner: ['partner', 'återförsäljare'],
     other: ['annat', 'övrigt', 'other'],
   },
+  customerType: {
+    company: ['företag', 'bolag', 'företagskund', 'business', 'b2b'],
+    private: ['privat', 'privatperson', 'privatkund', 'konsument', 'person', 'private', 'consumer', 'b2c'],
+  },
   industry: {
     it: ['itochtech', 'it', 'tech', 'mjukvara', 'software'],
     construction: ['bygg', 'byggnation', 'construction'],
@@ -205,6 +239,23 @@ export function parseImportDate(value: string): string | null {
   return date.toISOString().slice(0, 10)
 }
 
+// Yes/no as people write it: ja/nej, true/false, x, 1/0.
+export function parseBoolean(value: string): boolean | null {
+  const v = normalizeLabel(value)
+  if (['ja', 'j', 'yes', 'y', 'true', 'sant', 'x', '1'].includes(v)) return true
+  if (['nej', 'n', 'no', 'false', 'falskt', '0'].includes(v)) return false
+  return null
+}
+
+// "10", "10,5", "10.00 %" -> 10.5. Null when it is not a number.
+export function parseDecimal(value: string): number | null {
+  const v = value.replace(/[\s%]/g, '').replace(',', '.')
+  return /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : null
+}
+
+// The first address when a cell holds several ("a@x.se | b@x.se").
+const firstEmail = (value: string) => value.split(/[\s|,;]+/).find(Boolean)?.toLowerCase() ?? value
+
 export const splitList = (value: string) =>
   value
     .split(/[,;|]/)
@@ -216,9 +267,18 @@ export const splitList = (value: string) =>
 export type ImportIssue = { field?: ImportField | string; code: string }
 
 // Names that the API resolves to ids (companies, members, pipelines, stages, contacts).
-export type ImportRefs = { company?: string; owner?: string; pipeline?: string; stage?: string; contactEmail?: string }
+export type ImportRefs = { company?: string; owner?: string; pipeline?: string; stage?: string; contactEmail?: string; contactName?: string }
 
-export type MappedRow = { input: Record<string, unknown>; refs: ImportRefs; issues: ImportIssue[] }
+// Issues stop the row. Notices are changes made to import it anyway, listed for review.
+export type MappedRow = { input: Record<string, unknown>; refs: ImportRefs; issues: ImportIssue[]; notices: ImportIssue[] }
+
+// Cells with only dashes or dots ("-", ".") mean "no value" in many exports. Zero-width spaces sneak in from web forms.
+const cellValue = (v: string | undefined) => {
+  const s = v?.replace(/[\u200B-\u200D\uFEFF]/g, '').trim()
+  return s && !/^[-–.]+$/.test(s) ? s : undefined
+}
+// "Box 77, -" -> "Box 77"
+const cleanStreet = (v: string) => v.replace(/,\s*-\s*$/, '').trim()
 
 // Only the fields the row provides, so updates never overwrite values with defaults.
 const provided = (parsed: Record<string, unknown>, input: Record<string, unknown>) =>
@@ -233,10 +293,11 @@ function zodIssues(error: z.ZodError): ImportIssue[] {
 export function mapRow(object: ImportObject, mapping: Array<ImportField | null>, values: string[]): MappedRow {
   const raw: Partial<Record<ImportField, string>> = {}
   mapping.forEach((field, i) => {
-    const v = values[i]?.trim()
+    const v = cellValue(values[i])
     if (field && v) raw[field] = v
   })
   const issues: ImportIssue[] = []
+  const notices: ImportIssue[] = []
   const refs: ImportRefs = {}
   const input: Record<string, unknown> = {}
   const copy = (...fields: string[]) => fields.forEach((f) => raw[f as ImportField] !== undefined && (input[f] = raw[f as ImportField]))
@@ -261,11 +322,52 @@ export function mapRow(object: ImportObject, mapping: Array<ImportField | null>,
     if (raw.country) input.country = raw.country.length === 2 ? raw.country.toUpperCase() : raw.country
     const parsed = createContactSchema.safeParse(input)
     if (!parsed.success) issues.push(...zodIssues(parsed.error))
-    return { input: parsed.success ? provided(parsed.data, input) : input, refs, issues }
+    return { input: parsed.success ? provided(parsed.data, input) : input, refs, issues, notices }
   }
 
   if (object === 'companies') {
-    copy('name', 'orgNumber', 'vatNumber', 'domain', 'phone', 'street', 'postalCode', 'city', 'country')
+    for (const f of ['street', 'invoiceStreet', 'deliveryStreet'] as const) if (raw[f]) raw[f] = cleanStreet(raw[f])
+    copy(
+      'name', 'vatNumber', 'tradeName', 'domain', 'phone', 'street', 'postalCode', 'city', 'country', 'notes',
+      'invoiceStreet', 'invoicePostalCode', 'invoiceCity', 'deliveryStreet', 'deliveryPostalCode', 'deliveryCity', 'fortnoxCustomerNumber',
+    )
+    if (raw.email) input.email = firstEmail(raw.email)
+    if (raw.invoiceEmail) input.invoiceEmail = firstEmail(raw.invoiceEmail)
+    if (raw.customerType) {
+      const type = matchAlias(VALUE_ALIASES.customerType, raw.customerType)
+      if (type) input.customerType = type
+      else issues.push({ field: 'customerType', code: 'invalid' })
+    }
+    if (raw.orgNumber) {
+      // A value that is not an org number (a customer number, a personnummer placeholder) means a private customer.
+      if (normalizeOrgNumber(raw.orgNumber)) input.orgNumber = raw.orgNumber
+      else {
+        input.customerType = 'private'
+        notices.push({ field: 'orgNumber', code: 'imported_as_private' })
+      }
+    }
+    if (raw.paymentTermDays) {
+      const days = Number(raw.paymentTermDays.replace(/\s*(dagar|dgr|days|d)$/i, ''))
+      if (Number.isInteger(days)) input.paymentTermDays = days
+      else issues.push({ field: 'paymentTermDays', code: 'invalid' })
+    }
+    if (raw.creditApproved) {
+      const yes = parseBoolean(raw.creditApproved)
+      if (yes === null) issues.push({ field: 'creditApproved', code: 'invalid' })
+      else input.creditApproved = yes
+    }
+    if (raw.creditLimit) {
+      const limit = parseMoney(raw.creditLimit)
+      if (limit === null) issues.push({ field: 'creditLimit', code: 'invalid' })
+      else input.creditLimit = limit
+    }
+    for (const f of ['discount', 'discountSale', 'discountRental'] as const) {
+      if (!raw[f]) continue
+      const n = parseDecimal(raw[f])
+      if (n === null) issues.push({ field: f, code: 'invalid' })
+      else input[f] = n
+    }
+    if (raw.contactName) refs.contactName = raw.contactName
     if (raw.industry) input.industry = picklistValue('industry', raw.industry)
     if (raw.size) {
       const size = parseSize(raw.size)
@@ -275,7 +377,7 @@ export function mapRow(object: ImportObject, mapping: Array<ImportField | null>,
     if (raw.tags) input.tags = splitList(raw.tags)
     const parsed = createCompanySchema.safeParse(input)
     if (!parsed.success) issues.push(...zodIssues(parsed.error))
-    return { input: parsed.success ? provided(parsed.data, input) : input, refs, issues }
+    return { input: parsed.success ? provided(parsed.data, input) : input, refs, issues, notices }
   }
 
   // deals: pipeline, stage, company, contact and owner are names resolved by the API.
@@ -308,7 +410,7 @@ export function mapRow(object: ImportObject, mapping: Array<ImportField | null>,
     if (email.success) refs.contactEmail = email.data
     else issues.push({ field: 'contactEmail', code: 'invalid' })
   }
-  return { input, refs, issues }
+  return { input, refs, issues, notices }
 }
 
 // ---- import API ---------------------------------------------------------------------------

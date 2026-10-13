@@ -230,7 +230,7 @@ function Preview({ object, file, mapping }: { object: ImportObject; file: Loaded
         </TableHeader>
         <TableBody>
           {file.rows.slice(0, PREVIEW_ROWS).map((row, r) => {
-            const { issues } = mapRow(object, mapping, row)
+            const { issues, notices } = mapRow(object, mapping, row)
             return (
               <TableRow key={r}>
                 <TableCell className="text-muted-foreground">{r + 1}</TableCell>
@@ -242,6 +242,8 @@ function Preview({ object, file, mapping }: { object: ImportObject; file: Loaded
                 <TableCell>
                   {issues.length ? (
                     <span className="text-destructive text-sm">{issueText(t, issues[0]!.field ?? null, issues[0]!.code)}</span>
+                  ) : notices.length ? (
+                    <span className="text-muted-foreground text-sm">{issueText(t, notices[0]!.field ?? null, notices[0]!.code)}</span>
                   ) : (
                     <CheckCircle2 className="size-4 text-green-600" aria-label={t('import.rowOk')} />
                   )}
@@ -256,6 +258,8 @@ function Preview({ object, file, mapping }: { object: ImportObject; file: Loaded
 }
 
 type T = ReturnType<typeof useTranslation>['t']
+// Rows that were skipped or imported with a change, not rows that failed.
+const NOT_FAILURES = new Set(['duplicate_in_file', 'imported_as_private'])
 const issueText = (t: T, field: string | null, code: string) =>
   t(`import.errors.${code}`, { defaultValue: t('import.errors.invalid'), field: field ? t(`import.fields.${field}`, { defaultValue: field }) : '' })
 
@@ -341,7 +345,7 @@ function ErrorReport({ detail }: { detail: ImportDetail }) {
             {detail.errors.map((e) => (
               <TableRow key={`${e.row}-${e.code}`}>
                 <TableCell>{e.row}</TableCell>
-                <TableCell className={e.code === 'duplicate_in_file' ? 'text-muted-foreground' : 'text-destructive'}>{issueText(t, e.field, e.code)}</TableCell>
+                <TableCell className={NOT_FAILURES.has(e.code) ? 'text-muted-foreground' : 'text-destructive'}>{issueText(t, e.field, e.code)}</TableCell>
                 <TableCell className="text-muted-foreground max-w-80 truncate">{e.values.filter(Boolean).join(' · ')}</TableCell>
               </TableRow>
             ))}
