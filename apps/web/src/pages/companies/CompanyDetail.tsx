@@ -59,7 +59,7 @@ export function CompanyDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{c.name}</h1>
+          <h1 className="truncate text-lg font-semibold">{c.name}</h1>
           <p className="text-muted-foreground">{[c.orgNumber, c.city].filter(Boolean).join(' · ')}</p>
           {c.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">

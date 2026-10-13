@@ -37,7 +37,7 @@ export function Home() {
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('home.greeting', { name: firstName })}</h1>
+        <h1 className="text-lg font-semibold">{t('home.greeting', { name: firstName })}</h1>
         <div className="flex flex-wrap gap-2" role="group" aria-label={t('dashboard.filters')}>
           <NativeSelect aria-label={t('dashboard.period')} className="w-44" value={params.get('period') ?? 'this_month'} onChange={(e) => set('period', e.target.value === 'this_month' ? '' : e.target.value)}>
             {DASHBOARD_PERIODS.map((p) => (

@@ -21,7 +21,7 @@ export function SettingsLayout() {
   if (!canManage && pathname !== '/settings/profile') return <Navigate to="/settings/profile" replace />
   return (
     <div className="mx-auto grid grid-cols-1 max-w-3xl gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>
+      <h1 className="text-lg font-semibold">{t('settings.title')}</h1>
       <nav className="flex gap-1 overflow-x-auto border-b" aria-label={t('settings.title')}>
         {tabs.map(({ to, key, end }) => (
           <NavLink

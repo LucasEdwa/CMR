@@ -45,7 +45,7 @@ export function TasksPage() {
     <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{mine ? t('tasks.myTasks') : t('tasks.title')}</h1>
+          <h1 className="text-lg font-semibold">{mine ? t('tasks.myTasks') : t('tasks.title')}</h1>
           {tasks.data && <p className="text-muted-foreground text-sm">{t('tasks.openCount', { count: openCount })}</p>}
         </div>
         <div className="flex flex-wrap items-end gap-2">

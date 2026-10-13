@@ -79,7 +79,7 @@ export function ContactsPage() {
   return (
     <div className="grid grid-cols-1 gap-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('contacts.title')}</h1>
+        <h1 className="text-lg font-semibold">{t('contacts.title')}</h1>
         <div className="flex gap-2">
           <ListActions
             object="contacts"

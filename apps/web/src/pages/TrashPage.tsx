@@ -15,7 +15,7 @@ export function TrashPage() {
 
   return (
     <div className="mx-auto grid grid-cols-1 max-w-3xl gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('trash.title')}</h1>
+      <h1 className="text-lg font-semibold">{t('trash.title')}</h1>
       <p className="text-muted-foreground">{t('trash.intro')}</p>
       {trash.isPending ? (
         <Skeleton className="h-48 w-full" />

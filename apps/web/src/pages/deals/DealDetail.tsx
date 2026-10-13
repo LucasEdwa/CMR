@@ -70,7 +70,7 @@ export function DealDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">{d.name}</h1>
+          <h1 className="text-lg font-semibold">{d.name}</h1>
           <p className="mt-1 text-xl font-medium tabular-nums">{formatMoney(d.value, d.currency)}</p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge variant={statusVariant(d.status)}>{t(`deals.statuses.${d.status}`)}</Badge>

@@ -81,7 +81,7 @@ export function ImportPage() {
   return (
     <div className="mx-auto grid max-w-4xl grid-cols-1 gap-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('import.title')}</h1>
+        <h1 className="text-lg font-semibold">{t('import.title')}</h1>
         <p className="text-muted-foreground">{t('import.intro')}</p>
       </header>
 

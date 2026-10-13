@@ -59,7 +59,7 @@ export function DealsPage() {
   return (
     <div className="mx-auto grid grid-cols-1 max-w-[100rem] gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">{t('deals.title')}</h1>
+        <h1 className="text-lg font-semibold">{t('deals.title')}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <NativeSelect
             aria-label={t('deals.pipeline')}

@@ -57,7 +57,7 @@ export function ContactDetail() {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{name}</h1>
+          <h1 className="truncate text-lg font-semibold">{name}</h1>
           <p className="text-muted-foreground">
             {[c.title, c.company?.name].filter(Boolean).join(' · ')}
           </p>

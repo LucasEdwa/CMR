@@ -30,7 +30,7 @@ export function DuplicatesPage() {
         {t('contacts.title')}
       </Link>
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{t('duplicates.title')}</h1>
+        <h1 className="text-lg font-semibold">{t('duplicates.title')}</h1>
         <p className="text-muted-foreground">{t('duplicates.intro')}</p>
       </header>
 
