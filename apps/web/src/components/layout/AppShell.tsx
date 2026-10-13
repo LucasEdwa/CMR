@@ -39,7 +39,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const { role } = useActiveWorkspace()
   return (
-    <nav className="grid gap-1" aria-label={t('nav.menu')}>
+    <nav className="grid gap-0.5" aria-label={t('nav.menu')}>
       {NAV.filter((item) => !item.writersOnly || role !== 'viewer').map(({ to, key, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -48,8 +48,8 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium',
-              isActive ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/60',
+              'flex h-7 items-center gap-2.5 rounded-md px-2 text-[13px] pointer-coarse:h-9',
+              isActive ? 'bg-foreground/8 text-foreground font-medium' : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
             )
           }
         >
@@ -80,7 +80,10 @@ function WorkspaceSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {/* Shrinks (and truncates the name) so the top bar fits a 360 px phone. */}
-        <Button variant="ghost" className="max-w-56 min-w-0 shrink justify-between gap-2" aria-label={t('nav.switchWorkspace')}>
+        <Button variant="ghost" className="hover:bg-foreground/5 max-w-56 min-w-0 shrink justify-between gap-2 px-2 has-[>svg]:px-2" aria-label={t('nav.switchWorkspace')}>
+          <span className="bg-primary text-primary-foreground grid size-5 shrink-0 place-items-center rounded text-[11px] font-semibold" aria-hidden>
+            {workspace?.name?.[0]?.toUpperCase()}
+          </span>
           <span className="truncate font-semibold">{workspace?.name}</span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-60" aria-hidden />
         </Button>
@@ -126,7 +129,7 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full" aria-label={me?.user.name}>
-          <Avatar className="size-8">
+          <Avatar className="size-7">
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
@@ -174,38 +177,44 @@ export function AppShell() {
   useWorkspaceCacheGuard()
   const [menuOpen, setMenuOpen] = useState(false)
 
+  // Laid out like a desktop app window: fixed chrome, and only the content pane scrolls.
   return (
-    <div className="flex min-h-svh">
-      <aside className="bg-muted/30 hidden w-56 shrink-0 border-r p-3 md:block">
-        <div className="mb-4 px-3 py-2 font-semibold">{t('app.name')}</div>
+    <div className="bg-chrome flex h-svh overflow-hidden">
+      <aside className="hidden w-56 shrink-0 flex-col gap-3 p-2 md:flex">
+        <WorkspaceSwitcher />
         <NavItems />
       </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-2 border-b px-2 sm:px-4">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('nav.menu')}>
-                <Menu className="size-5" aria-hidden />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-3">
-              <SheetHeader className="px-3">
-                <SheetTitle>{t('app.name')}</SheetTitle>
-              </SheetHeader>
-              <NavItems onNavigate={() => setMenuOpen(false)} />
-            </SheetContent>
-          </Sheet>
-          <WorkspaceSwitcher />
-          <div className="ml-auto flex items-center gap-1">
-            <SearchPalette />
-            <NotificationBell />
-            <UserMenu />
-          </div>
-        </header>
-        <DeletionBanner />
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6">
-          <Outlet />
-        </main>
+      <div className="flex min-w-0 flex-1 flex-col md:py-2 md:pr-2">
+        <div className="bg-background flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-lg md:border md:shadow-xs">
+          <header className="flex h-11 shrink-0 items-center gap-1 border-b px-2">
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('nav.menu')}>
+                  <Menu className="size-5" aria-hidden />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="bg-chrome w-64 gap-3 p-2">
+                <SheetHeader className="px-2">
+                  <SheetTitle>{t('app.name')}</SheetTitle>
+                </SheetHeader>
+                <NavItems onNavigate={() => setMenuOpen(false)} />
+              </SheetContent>
+            </Sheet>
+            {/* The sidebar holds the switcher on wide screens; phones keep it in the toolbar. */}
+            <div className="flex min-w-0 md:hidden">
+              <WorkspaceSwitcher />
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              <SearchPalette />
+              <NotificationBell />
+              <UserMenu />
+            </div>
+          </header>
+          <DeletionBanner />
+          <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </div>
   )
