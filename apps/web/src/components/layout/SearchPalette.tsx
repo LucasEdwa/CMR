@@ -39,7 +39,7 @@ export function SearchPalette() {
     <>
       <Button
         variant="outline"
-        className="text-muted-foreground h-9 w-9 justify-center gap-2 overflow-hidden px-0 has-[>svg]:px-0 sm:w-56 sm:justify-start sm:px-3 sm:has-[>svg]:px-3"
+        className="text-muted-foreground bg-muted/50 h-8 w-8 shadow-none pointer-coarse:h-9 justify-center gap-2 overflow-hidden px-0 has-[>svg]:px-0 sm:w-56 sm:justify-start sm:px-3 sm:has-[>svg]:px-3"
         onClick={() => setOpen(true)}
         aria-label={t('search.open')}
         aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
