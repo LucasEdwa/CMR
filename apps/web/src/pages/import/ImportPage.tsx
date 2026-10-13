@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { AlertCircle, CheckCircle2, Download, FileUp, RotateCcw } from 'lucide-react'
+import { AlertCircle, CheckCircle2, CircleStop, Download, FileUp, RotateCcw } from 'lucide-react'
 import {
   IMPORT_FIELDS,
   IMPORT_OBJECTS,
@@ -285,6 +285,9 @@ function ImportResult({ id, onAnother }: { id: string; onAnother: () => void }) 
               <div className="bg-primary h-full transition-all" style={{ width: `${percent}%` }} />
             </div>
             <p className="text-muted-foreground text-sm">{t('import.processed', { done: i.processed, total: i.total })}</p>
+            <div>
+              <CancelButton imp={i} />
+            </div>
           </div>
         ) : (
           <>
@@ -360,7 +363,7 @@ function UndoButton({ imp }: { imp: Import }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const undo = useDataMutation(dataApi.undoImport)
-  if (imp.status !== 'done' && imp.status !== 'failed') return null
+  if (imp.status !== 'done' && imp.status !== 'failed' && imp.status !== 'cancelled') return null
   return (
     <>
       <Button variant="outline" onClick={() => setOpen(true)}>
@@ -379,6 +382,39 @@ function UndoButton({ imp }: { imp: Import }) {
             onSuccess: () => {
               setOpen(false)
               toast.success(t('import.undone'))
+            },
+            onError: (err) => toast.error(errorMessage(t, err)),
+          })
+        }
+      />
+    </>
+  )
+}
+
+// Stops the import; what was already imported stays and can be undone afterwards.
+function CancelButton({ imp, size }: { imp: Import; size?: 'sm' }) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const cancel = useDataMutation(dataApi.cancelImport)
+  if (imp.status !== 'queued' && imp.status !== 'running') return null
+  return (
+    <>
+      <Button variant="outline" size={size} onClick={() => setOpen(true)}>
+        <CircleStop className="size-4" aria-hidden />
+        {t('import.cancel')}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t('import.cancelTitle')}
+        description={t('import.cancelBody', { count: imp.created + imp.updated })}
+        confirmLabel={t('import.cancel')}
+        pending={cancel.isPending}
+        onConfirm={() =>
+          cancel.mutate(imp.id, {
+            onSuccess: () => {
+              setOpen(false)
+              toast.success(t('import.cancelled'))
             },
             onError: (err) => toast.error(errorMessage(t, err)),
           })
@@ -413,7 +449,8 @@ function History() {
               </button>
               <span className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">{t('import.short', { created: i.created, failed: i.failed })}</span>
-                <Badge variant={i.status === 'undone' || i.status === 'failed' ? 'secondary' : 'outline'}>{t(`import.badges.${i.status}`)}</Badge>
+                <Badge variant={i.status === 'undone' || i.status === 'failed' || i.status === 'cancelled' ? 'secondary' : 'outline'}>{t(`import.badges.${i.status}`)}</Badge>
+                <CancelButton imp={i} size="sm" />
               </span>
             </li>
           ))}

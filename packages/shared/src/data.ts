@@ -416,7 +416,7 @@ export function mapRow(object: ImportObject, mapping: Array<ImportField | null>,
 // ---- import API ---------------------------------------------------------------------------
 
 export const IMPORT_MODES = ['skip', 'update'] as const
-export const IMPORT_STATUSES = ['queued', 'running', 'done', 'failed', 'undone'] as const
+export const IMPORT_STATUSES = ['queued', 'running', 'done', 'failed', 'cancelled', 'undone'] as const
 export const MAX_IMPORT_BYTES = 10 * 1024 * 1024
 export const MAX_IMPORT_ROWS = 50_000
 

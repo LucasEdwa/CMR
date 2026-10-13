@@ -50,6 +50,7 @@ import { ensureDefaultPipeline } from './pipelines.js'
 export type ImportJob = TenantJob<{ importId: string; role: TenantContext['role'] }>
 
 const CHUNK = 250
+const CANCEL_CHECK = 25
 export const MAX_IMPORT_ERRORS = 1000
 
 let boss: PgBoss | null = null
@@ -404,11 +405,22 @@ export async function runImport(job: ImportJob) {
     if (errors.length < MAX_IMPORT_ERRORS) errors.push({ row: index + 1, field, code, values })
   }
 
+  // Someone pressed Cancel: checked every few rows so a slow import stops quickly.
+  const cancelled = async (tx: Tx) => (await tx.select({ status: imports.status }).from(imports).where(eq(imports.id, row.id)))[0]?.status === 'cancelled'
+  let stopped = false
+
   try {
-    for (let start = 0; start < rows.length; start += CHUNK) {
+    for (let start = 0; start < rows.length && !stopped; start += CHUNK) {
       await withTenant(ctx, async (tx) => {
         const lookups = await loadLookups(tx, ctx)
+        let processed = Math.min(start + CHUNK, rows.length)
         for (let i = start; i < Math.min(start + CHUNK, rows.length); i++) {
+          if (i % CANCEL_CHECK === 0 && (await cancelled(tx))) {
+            // Rows done so far are kept (and listed for undo); the rest is not imported.
+            stopped = true
+            processed = i
+            break
+          }
           const values = rows[i]!
           const mapped = mapRow(row.object, mapping, values)
           if (mapped.issues.length) {
@@ -442,19 +454,42 @@ export async function runImport(job: ImportJob) {
         }
         await tx
           .update(imports)
-          .set({ processed: Math.min(start + CHUNK, rows.length), ...counts, errors })
+          .set({ processed, ...counts, errors })
           .where(eq(imports.id, row.id))
       })
     }
+    // A cancelled import keeps its status; only a running one becomes done.
     await withTenant(ctx, (tx) =>
-      tx.update(imports).set({ status: 'done', finishedAt: new Date(), source: null, ...counts, errors }).where(eq(imports.id, row.id)),
+      tx
+        .update(imports)
+        .set({ status: 'done', finishedAt: new Date(), source: null, ...counts, errors })
+        .where(and(eq(imports.id, row.id), eq(imports.status, 'running'))),
     )
   } catch (err) {
     console.error('[imports] failed', row.id, err)
     await withTenant(ctx, (tx) =>
-      tx.update(imports).set({ status: 'failed', finishedAt: new Date(), source: null, ...counts, errors }).where(eq(imports.id, row.id)),
+      tx
+        .update(imports)
+        .set({ status: 'failed', finishedAt: new Date(), source: null, ...counts, errors })
+        .where(and(eq(imports.id, row.id), eq(imports.status, 'running'))),
     )
   }
+}
+
+// ---- cancel ---------------------------------------------------------------------------
+
+// Stops a queued or running import. Rows already imported stay, so the import can then be undone.
+// Also releases an import whose worker died (it would otherwise show as running forever).
+export async function cancelImport(tx: Tx, ctx: TenantContext, id: string) {
+  const [row] = await tx.select().from(imports).where(eq(imports.id, id))
+  if (!row) throw new HttpError(404, 'not_found', 'Import not found')
+  if (row.createdByUserId !== ctx.userId && !(MANAGERS as readonly string[]).includes(ctx.role)) {
+    throw new HttpError(403, 'forbidden', 'Only the person who imported or an admin can cancel it')
+  }
+  if (row.status !== 'queued' && row.status !== 'running') throw new HttpError(409, 'import_finished', 'The import has already finished')
+  await tx.update(imports).set({ status: 'cancelled', finishedAt: new Date(), source: null }).where(eq(imports.id, id))
+  await audit(tx, ctx, { action: 'cancel_import', entityType: row.object, entityId: id, after: { processed: row.processed, created: row.created } })
+  return getImport(tx, id)
 }
 
 // ---- undo ----------------------------------------------------------------------------
@@ -468,7 +503,7 @@ export async function undoImport(tx: Tx, ctx: TenantContext, id: string) {
   if (row.createdByUserId !== ctx.userId && !(MANAGERS as readonly string[]).includes(ctx.role)) {
     throw new HttpError(403, 'forbidden', 'Only the person who imported or an admin can undo it')
   }
-  if (row.status !== 'done' && row.status !== 'failed') throw new HttpError(409, 'import_not_finished', 'The import has not finished')
+  if (row.status !== 'done' && row.status !== 'failed' && row.status !== 'cancelled') throw new HttpError(409, 'import_not_finished', 'The import has not finished')
 
   const records = await tx.select().from(importRecords).where(eq(importRecords.importId, id))
   const created = (type: 'contact' | 'company' | 'deal') => records.filter((r) => r.recordType === type && r.action === 'created').map((r) => r.recordId)

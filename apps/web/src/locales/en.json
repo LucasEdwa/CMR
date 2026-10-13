@@ -749,8 +749,9 @@
     "processed": "{{done}} of {{total}} rows done",
     "statuses": {
       "done": "Import finished: {{name}}",
-      "failed": "Import stopped: {{name}}",
-      "undone": "Import undone: {{name}}"
+      "failed": "Import failed: {{name}}",
+      "undone": "Import undone: {{name}}",
+      "cancelled": "Import cancelled: {{name}}"
     },
     "summary": "Result",
     "counts": {
@@ -791,9 +792,15 @@
       "queued": "Queued",
       "running": "Running",
       "done": "Done",
-      "failed": "Stopped",
-      "undone": "Undone"
-    }
+      "failed": "Failed",
+      "undone": "Undone",
+      "cancelled": "Cancelled"
+    },
+    "cancel": "Cancel import",
+    "cancelTitle": "Cancel the import?",
+    "cancelBody_one": "The import stops now. The {{count}} record already imported stays; you can remove it with Undo import.",
+    "cancelBody_other": "The import stops now. The {{count}} records already imported stay; you can remove them with Undo import.",
+    "cancelled": "The import was cancelled"
   },
   "export": {
     "button": "Export to CSV",
@@ -942,7 +949,8 @@
       "merge": "merged",
       "invite": "invited",
       "revoke": "revoked",
-      "accept": "accepted"
+      "accept": "accepted",
+      "cancel_import": "cancelled the import of"
     },
     "entities": {
       "contact": "the contact",

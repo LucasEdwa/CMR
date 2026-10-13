@@ -26,7 +26,7 @@ import { listCompanies } from '../services/companies.js'
 import { listContacts } from '../services/contacts.js'
 import { listDeals } from '../services/deals.js'
 import { findDuplicates, mergeContacts } from '../services/duplicates.js'
-import { createImport, getImport, listImports, startImport, undoImport } from '../services/imports.js'
+import { cancelImport, createImport, getImport, listImports, startImport, undoImport } from '../services/imports.js'
 import { recentRecords, recordView, search } from '../services/search.js'
 
 const idParam = z.object({ id: z.uuid() })
@@ -90,6 +90,12 @@ export async function dataRoutes(app: FastifyInstance) {
     const ctx = requireTenant(request, WRITERS)
     const { id } = idParam.parse(request.params)
     return withTenant(ctx, (tx) => getImport(tx, id))
+  })
+
+  app.post('/imports/:id/cancel', { preHandler: inWorkspace(WRITERS), config: limit('cancel-import', 20, '1 hour', 'workspace') }, async (request) => {
+    const ctx = requireTenant(request, WRITERS)
+    const { id } = idParam.parse(request.params)
+    return withTenant(ctx, (tx) => cancelImport(tx, ctx, id))
   })
 
   app.post('/imports/:id/undo', { preHandler: inWorkspace(WRITERS), config: limit('undo-import', 20, '1 hour', 'workspace') }, async (request) => {

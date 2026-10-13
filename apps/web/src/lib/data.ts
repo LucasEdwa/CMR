@@ -57,6 +57,7 @@ export function useDataMutation<TVars, TResult = unknown>(fn: (vars: TVars) => P
 
 export const dataApi = {
   startImport: (body: object) => send('POST', '/imports', body).then((r) => z.object({ id: z.uuid() }).parse(r)),
+  cancelImport: (id: string) => send('POST', `/imports/${id}/cancel`).then((r) => importDetailSchema.parse(r)),
   undoImport: (id: string) => send('POST', `/imports/${id}/undo`).then((r) => importDetailSchema.parse(r)),
   bulk: (object: ImportObject, body: object) => send('POST', `/${object}/bulk`, body).then((r) => bulkResultSchema.parse(r)),
   merge: (body: object) => send('POST', '/contacts/merge', body).then((r) => contactSchema.parse(r)),

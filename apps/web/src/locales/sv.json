@@ -749,8 +749,9 @@
     "processed": "{{done}} av {{total}} rader klara",
     "statuses": {
       "done": "Import klar: {{name}}",
-      "failed": "Importen avbröts: {{name}}",
-      "undone": "Importen är ångrad: {{name}}"
+      "failed": "Importen misslyckades: {{name}}",
+      "undone": "Importen är ångrad: {{name}}",
+      "cancelled": "Importen avbröts: {{name}}"
     },
     "summary": "Resultat",
     "counts": {
@@ -791,9 +792,15 @@
       "queued": "I kö",
       "running": "Pågår",
       "done": "Klar",
-      "failed": "Avbruten",
-      "undone": "Ångrad"
-    }
+      "failed": "Misslyckades",
+      "undone": "Ångrad",
+      "cancelled": "Avbruten"
+    },
+    "cancel": "Avbryt import",
+    "cancelTitle": "Avbryt importen?",
+    "cancelBody_one": "Importen stoppas nu. Den {{count}} post som redan importerats finns kvar, och du kan ta bort den med Ångra import.",
+    "cancelBody_other": "Importen stoppas nu. De {{count}} poster som redan importerats finns kvar, och du kan ta bort dem med Ångra import.",
+    "cancelled": "Importen är avbruten"
   },
   "export": {
     "button": "Exportera till CSV",
@@ -942,7 +949,8 @@
       "merge": "slog ihop",
       "invite": "bjöd in",
       "revoke": "drog tillbaka",
-      "accept": "accepterade"
+      "accept": "accepterade",
+      "cancel_import": "avbröt importen av"
     },
     "entities": {
       "contact": "kontakten",
